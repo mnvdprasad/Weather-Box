@@ -66,7 +66,6 @@ The goal was to push frontend animation and CSS effects to create something that
 2. Enter a city name (Some areas data not available)
 3. View real-time weather details and forecasts
 
-
 🧠 Notes
 
 * Internet connection required for live data.
