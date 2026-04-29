@@ -9,7 +9,7 @@ It provides real-time weather data, hourly forecasts, air quality, UV index, and
 
 ✨ Features
 
-✨ Real-time weather search by city
+🌍 Real-time weather search by city
 🔍 Smart autocomplete city suggestions
 🌙 Automatic Day & Night theme switching
 ⏰ Live local time updates
@@ -53,7 +53,6 @@ Every animation is layered and smoothly blended for a cinematic weather feel.
 🧠 Vanilla JavaScript
 🌐 OpenWeatherMap API
 🎯 Boxicons
-
 
 🚀 Why This Project?
 
