@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 128 128">
+  <g clip-path="url(#sun-rise)">
+    <g>
+      <path stroke="#8f6b00" stroke-linecap="round" stroke-width="4" d="M37 92H91" />
+      <path stroke="#8f6b00" stroke-linecap="round" stroke-width="4" d="M42 100H71 M77 100H86" />
+    </g>
+    <g>
+      <mask id="sun-rise_mask" width="128" height="81" x="0" y="9" maskUnits="userSpaceOnUse" style="mask-type:alpha">
+        <path fill="#000" d="M0 9h128v81H0z" />
+      </mask>
+      <g mask="url(#sun-rise_mask)">
+        <g>
+          <circle cx="64" cy="82" r="19.5" fill="url(#sun-rise_paint)" stroke="#f8af18" />
+          <g>
+            <path fill="#f8af18" d="M61 37a3 3 0 1 1 6 0v14a3 3 0 0 1-6 0zM93.699 48.059a3 3 0 1 1 4.242 4.243l-9.9 9.899a3 3 0 1 1-4.242-4.243zM109 79a3 3 0 1 1 0 6H95a3 3 0 1 1 0-6zM97.941 111.698a3 3 0 0 1-4.243 4.243l-9.899-9.899a3 3 0 0 1 4.243-4.243zM61 113a3 3 0 1 1 6 0v14a3 3 0 1 1-6 0zM39.958 101.799a3 3 0 1 1 4.243 4.243l-9.9 9.899a3 3 0 1 1-4.242-4.243zM33 79a3 3 0 1 1 0 6H19a3 3 0 0 1 0-6zM44.201 57.958a3 3 0 1 1-4.243 4.243l-9.9-9.9a3 3 0 1 1 4.243-4.242z" />
+            <animateTransform attributeName="transform" begin="0s" dur="20s" repeatCount="indefinite" type="rotate" values="0 64.0 82.0;360 64.0 82.0" />
+          </g>
+        </g>
+      </g>
+    </g>
+  </g>
+  <defs>
+    <linearGradient id="sun-rise_paint" x1="64" x2="64" y1="62" y2="102" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fbbf24" />
+      <stop offset="1" stop-color="#f8af18" />
+    </linearGradient>
+    <clipPath id="sun-rise">
+      <rect width="128" height="128" fill="#fff" />
+    </clipPath>
+  </defs>
+</svg>
