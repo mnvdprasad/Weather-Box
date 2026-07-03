@@ -1,6 +1,0 @@
-{
-  "routes": [
-    { "src": "/", "dest": "/WeatherBox.html" },
-    { "src": "/api/(.*)", "dest": "/api/$1" }
-  ]
-}
