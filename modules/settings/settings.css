@@ -1,0 +1,629 @@
+      /* ==================== SETTINGS MENU ==================== */
+      .settings-title {
+        font-family: "LocalImpact", "Impact", "Arial Narrow", sans-serif;
+        font-size: 1.2rem;
+        font-weight: normal;
+        letter-spacing: 0.5px;
+        margin-left: 10px;
+      }
+
+      .settings-icon {
+        position: absolute;
+        color: #ffffff;
+        top: 10px;
+        right: 10px;
+        font-size: 1.3rem;
+        cursor: pointer;
+        z-index: 30;
+        opacity: 0.7;
+        transition:
+          opacity 0.2s ease,
+          transform 0.3s ease;
+      }
+
+      .settings-icon:hover {
+        opacity: 1;
+        transform: rotate(90deg);
+      }
+
+      .radar-icon {
+        display: none;
+        position: absolute;
+        color: #ffffff;
+        top: 10px;
+        right: 46px;
+        font-size: 1.3rem;
+        cursor: pointer;
+        z-index: 30;
+        opacity: 0.7;
+        transition:
+          opacity 0.2s ease,
+          transform 0.3s ease;
+      }
+
+      .radar-icon:hover {
+        opacity: 1;
+        transform: scale(1.1);
+      }
+
+
+      .radar-icon.active {
+        color: #fff;
+        opacity: 1;
+        filter:
+            brightness(2)
+            drop-shadow(0 0 2px #fff)
+            drop-shadow(0 0 6px #fff)
+            drop-shadow(0 0 14px rgba(255,255,255,.8));
+      }
+
+      .weather-box.clear-day .settings-icon,
+      .weather-box.partly-cloudy-day .settings-icon,
+      .weather-box.cloudy-day .settings-icon,
+      .weather-box.overcast-day .settings-icon,
+      .weather-box.drizzle-day .settings-icon,
+      .weather-box.rain-day .settings-icon,
+      .weather-box.moderate-rain-day .settings-icon,
+      .weather-box.heavy-rain-day .settings-icon,
+      .weather-box.extreme-rain-day .settings-icon,
+      .weather-box.hail-day .settings-icon,
+      .weather-box.snow-day .settings-icon,
+      .weather-box.light-snow-day .settings-icon,
+      .weather-box.heavy-snow-day .settings-icon,
+      .weather-box.rain-snow-day .settings-icon,
+      .weather-box.fog-day .settings-icon,
+      .weather-box.thunderstorm-day .settings-icon,
+      .weather-box.thunderstorm-rain-day .settings-icon,
+      .weather-box.severe-thunderstorm-day .settings-icon,
+      .weather-box.overcast-night .settings-icon,
+      .weather-box.drizzle-night .settings-icon,
+      .weather-box.rain-night .settings-icon,
+      .weather-box.moderate-rain-night .settings-icon,
+      .weather-box.heavy-rain-night .settings-icon,
+      .weather-box.extreme-rain-night .settings-icon,
+      .weather-box.hail-night .settings-icon,
+      .weather-box.snow-night .settings-icon,
+      .weather-box.light-snow-night .settings-icon,
+      .weather-box.heavy-snow-night .settings-icon,
+      .weather-box.rain-snow-night .settings-icon,
+      .weather-box.thunderstorm-night .settings-icon,
+      .weather-box.thunderstorm-rain-night .settings-icon,
+      .weather-box.severe-thunderstorm-night .settings-icon,
+
+      .weather-box.clear-day .radar-icon,
+      .weather-box.partly-cloudy-day .radar-icon,
+      .weather-box.cloudy-day .radar-icon,
+      .weather-box.overcast-day .radar-icon,
+      .weather-box.drizzle-day .radar-icon,
+      .weather-box.rain-day .radar-icon,
+      .weather-box.moderate-rain-day .radar-icon,
+      .weather-box.heavy-rain-day .radar-icon,
+      .weather-box.extreme-rain-day .radar-icon,
+      .weather-box.hail-day .radar-icon,
+      .weather-box.snow-day .radar-icon,
+      .weather-box.light-snow-day .radar-icon,
+      .weather-box.heavy-snow-day .radar-icon,
+      .weather-box.rain-snow-day .radar-icon,
+      .weather-box.fog-day .radar-icon,
+      .weather-box.thunderstorm-day .radar-icon,
+      .weather-box.thunderstorm-rain-day .radar-icon,
+      .weather-box.severe-thunderstorm-day .radar-icon,
+      .weather-box.overcast-night .radar-icon,
+      .weather-box.drizzle-night .radar-icon,
+      .weather-box.rain-night .radar-icon,
+      .weather-box.moderate-rain-night .radar-icon,
+      .weather-box.heavy-rain-night .radar-icon,
+      .weather-box.extreme-rain-night .radar-icon,
+      .weather-box.hail-night .radar-icon,
+      .weather-box.snow-night .radar-icon,
+      .weather-box.light-snow-night .radar-icon,
+      .weather-box.heavy-snow-night .radar-icon,
+      .weather-box.rain-snow-night .radar-icon,
+      .weather-box.thunderstorm-night .radar-icon,
+      .weather-box.thunderstorm-rain-night .radar-icon,
+      .weather-box.severe-thunderstorm-night .radar-icon {
+        color: #000000;
+      }
+
+      .weather-box.clear-day .radar-icon.active,
+      .weather-box.partly-cloudy-day .radar-icon.active,
+      .weather-box.cloudy-day .radar-icon.active,
+      .weather-box.overcast-day .radar-icon.active,
+      .weather-box.drizzle-day .radar-icon.active,
+      .weather-box.rain-day .radar-icon.active,
+      .weather-box.moderate-rain-day .radar-icon.active,
+      .weather-box.heavy-rain-day .radar-icon.active,
+      .weather-box.extreme-rain-day .radar-icon.active,
+      .weather-box.hail-day .radar-icon.active,
+      .weather-box.snow-day .radar-icon.active,
+      .weather-box.light-snow-day .radar-icon.active,
+      .weather-box.heavy-snow-day .radar-icon.active,
+      .weather-box.rain-snow-day .radar-icon.active,
+      .weather-box.fog-day .radar-icon.active,
+      .weather-box.thunderstorm-day .radar-icon.active,
+      .weather-box.thunderstorm-rain-day .radar-icon.active,
+      .weather-box.severe-thunderstorm-day .radar-icon.active,
+      .weather-box.overcast-night .radar-icon.active,
+      .weather-box.drizzle-night .radar-icon.active,
+      .weather-box.rain-night .radar-icon.active,
+      .weather-box.moderate-rain-night .radar-icon.active,
+      .weather-box.heavy-rain-night .radar-icon.active,
+      .weather-box.extreme-rain-night .radar-icon.active,
+      .weather-box.hail-night .radar-icon.active,
+      .weather-box.snow-night .radar-icon.active,
+      .weather-box.light-snow-night .radar-icon.active,
+      .weather-box.heavy-snow-night .radar-icon.active,
+      .weather-box.rain-snow-night .radar-icon.active,
+      .weather-box.thunderstorm-night .radar-icon.active,
+      .weather-box.thunderstorm-rain-night .radar-icon.active,
+      .weather-box.severe-thunderstorm-night .radar-icon.active {
+        filter:
+            invert(1)
+            drop-shadow(0 0 2px rgba(0,0,0,.5))
+            drop-shadow(0 0 6px rgba(0,0,0,.7));
+      }
+
+      .weather-box:has(.settings-menu.open) .settings-icon,
+      .weather-box:has(.settings-menu.open) .radar-icon {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      /* The settings menu container */
+      .settings-menu {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 215px;
+        height: auto;
+        background: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.2),
+          rgba(255, 255, 255, 0.05)
+        );
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 15px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        z-index: 40;
+        transform-origin: top right;
+        transform: scale(0);
+        opacity: 0;
+        visibility: hidden;
+        transition:
+          transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1),
+          opacity 0.3s ease,
+          visibility 0.4s;
+        display: flex;
+        flex-direction: column;
+        padding: 10px;
+        box-sizing: border-box;
+        color: inherit;
+        max-height: calc(100% - 20px);
+        overflow-y: auto;
+      }
+
+      .settings-menu::-webkit-scrollbar {
+        width: 4px;
+      }
+      .settings-menu::-webkit-scrollbar-track {
+        margin-top: 15px;
+        margin-bottom: 15px;
+      }
+      .settings-menu::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 4px;
+      }
+
+      .settings-menu.open {
+        transform: scale(1);
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .settings-header {
+        font-size: 1rem;
+        font-weight: bold;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 10px;
+      }
+
+      .close-settings {
+        position: absolute;
+        top: 3px;
+        right: 3px;
+        cursor: pointer;
+        font-size: 1.5rem;
+        color: rgba(215, 215, 215, 0.8);
+        transition: transform 0.2s ease;
+      }
+
+      .close-settings:hover {
+        transform: scale(1.2);
+      }
+
+      .settings-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        text-align: left;
+      }
+
+      .settings-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.9rem;
+        font-weight: 500;
+      }
+
+      /* Styling for individual option blocks inside the settings menu */
+      .settings-glass-box {
+        background: linear-gradient(
+          135deg,
+          rgba(30, 30, 70, 0.2),
+          rgba(20, 20, 50, 0.05)
+        );
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-top: 1px solid rgba(255, 255, 255, 0.8);
+        border-left: 1px solid rgba(255, 255, 255, 0.8);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        transition:
+          background 0.2s,
+          box-shadow 0.2s;
+      }
+
+      .settings-glass-box:hover {
+        background: linear-gradient(
+          135deg,
+          rgba(30, 30, 70, 0.05),
+          rgba(20, 20, 50, 0.05)
+        );
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+      }
+
+      .settings-glass-box > span {
+        font-family: "Oswald", sans-serif;
+      }
+
+      .settings-glass-box.row-layout {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        padding: 6px 10px;
+      }
+
+      .settings-glass-box.row-layout > span {
+        font-size: 0.85rem;
+        font-weight: 500;
+      }
+
+      .settings-glass-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 6px 10px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        cursor: pointer;
+        font-family: "Oswald", sans-serif;
+      }
+
+      .settings-glass-header.expanded .bx-chevron-down {
+        transform: rotate(180deg);
+      }
+
+      .settings-glass-options {
+        max-height: 0;
+        opacity: 0;
+        transition:
+          max-height 0.3s ease,
+          opacity 0.3s ease,
+          padding 0.3s ease;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .settings-glass-options.expanded {
+        max-height: 100px;
+        opacity: 1;
+        padding: 0 10px 6px 10px;
+      }
+
+      .settings-glass-options.col-layout {
+        flex-direction: column;
+        flex-wrap: nowrap;
+        gap: 3px;
+      }
+
+      .settings-glass-options.col-layout.expanded {
+        max-height: 400px;
+        overflow-y: auto;
+      }
+
+      .settings-glass-options::-webkit-scrollbar {
+        width: 4px;
+      }
+      .settings-glass-options::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 4px;
+      }
+
+      /* Checkbox switch styling for Remember me, Hide alerts */
+      .switch {
+        position: relative;
+        display: inline-block;
+        width: 36px;
+        height: 20px;
+      }
+
+      .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(255, 255, 255, 0.2);
+        transition: 0.3s;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+      }
+
+      .slider:before {
+        position: absolute;
+        content: "";
+        height: 14px;
+        width: 14px;
+        left: 2px;
+        bottom: 2px;
+        background-color: white;
+        transition: 0.3s;
+        border-radius: 50%;
+      }
+      input:checked + .slider {
+        background-color: rgba(255, 165, 0, 0.8);
+        border-color: rgba(255, 165, 0, 1);
+      }
+
+      input:checked + .slider:before {
+        transform: translateX(16px);
+      }
+
+      /* Auto refresh settings */
+      .refresh-select {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 100%;
+        background: linear-gradient(
+          135deg,
+          rgba(70, 50, 30, 0.4),
+          rgba(70, 55, 30, 0.4)
+        );
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-top: 1px solid rgba(255, 255, 255, 0.5);
+        border-left: 1px solid rgba(255, 255, 255, 0.5);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        border-radius: 6px;
+        color: #fff;
+        font-size: 0.75rem;
+        outline: none;
+        cursor: pointer;
+        transition:
+          max-height 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
+          background 0.2s,
+          box-shadow 0.2s;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        z-index: 50;
+        max-height: 20px;
+      }
+
+      .refresh-select:hover {
+        background: linear-gradient(
+          135deg,
+          rgb(70, 50, 30, 0.8),
+          rgb(70, 55, 30, 0.8)
+        );
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+      }
+
+      .refresh-select.open {
+        background: linear-gradient(
+          135deg,
+          rgba(70, 50, 30, 0.8),
+          rgba(70, 55, 30, 0.8)
+        );
+        -webkit-backdrop-filter: blur(5px);
+        backdrop-filter: blur(5px);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        max-height: 220px;
+      }
+
+      .refreshCustom-select-wrapper {
+        position: relative;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        width: 65px;
+        height: 20px;
+      }
+
+      .refreshCustom-select-trigger {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1px 6px;
+        min-height: 20px;
+        box-sizing: border-box;
+      }
+
+      .refreshCustom-select-trigger i {
+        transition: transform 0.3s ease;
+      }
+      
+      .refresh-select.open .refreshCustom-select-trigger i {
+        transform: rotate(180deg);
+      }
+
+      .refreshCustom-select-options {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+      }
+
+      .refreshCustom-option {
+        padding: 1px 10px;
+        font-size: 0.7rem;
+        cursor: pointer;
+        transition: background 0.2s;
+        color: #fff;
+        text-align: center;
+      }
+
+      .refreshCustom-option:hover,
+      .refreshCustom-option.active {
+        background: rgba(255, 255, 255, 0.25);
+      }
+
+      .refresh-box {
+        overflow: visible;
+        z-index: 10;
+      }
+
+      .refresh-label {
+        margin-left: -1px;
+      }
+
+      /* Toggle buttons for time format (12H / 24H) */
+      .time-format-toggle {
+        position: relative;
+        width: 62px;
+        height: 16px;
+        border-radius: 6px;
+        background: linear-gradient(
+          135deg,
+          rgba(70, 50, 30, 0.1),
+          rgba(70, 55, 30, 0.1)
+        );
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-top: 1px solid rgba(255, 255, 255, 0.5);
+        border-left: 1px solid rgba(255, 255, 255, 0.5);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+      }
+
+      .time-opt {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.5rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-sizing: border-box;
+      }
+
+      .time-opt:hover {
+        background: rgba(255, 255, 255, 0.15);
+      }
+
+      .time-opt.active {
+        background: rgba(70, 50, 30, 0.8);
+        font-weight: bold;
+        color: #fff;
+      }
+
+      .time-opt.opt-24 {
+        left: 0;
+        width: 50%;
+        clip-path: polygon(0 0, 100% 0, 84% 100%, 0 100%);
+        padding-right: 1px;
+      }
+
+      .time-opt.opt-12 {
+        right: 0;
+        width: 58%;
+        clip-path: polygon(14% 0, 100% 0, 100% 100%, 0 100%);
+        padding-left: 3px;
+      }
+
+      /* Units Buttons */
+      .unit-group {
+        display: flex;
+        flex-direction: row;
+        align-items: flex-start;
+        gap: 6px;
+      }
+
+      .unit-label {
+        font-family: "Oswald", sans-serif;
+        font-size: 0.75rem;
+        font-weight: 100;
+        width: 75px;
+        flex-shrink: 0;
+      }
+
+      .unit-row {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 3px;
+      }
+
+      #units-options .settings-option {
+        font-size: 0.5rem;
+        padding: 1px 4px;
+        border-radius: 4px;
+        margin-top: 3px;
+      }
+
+      /* Settings optiona for Units */
+      .settings-option {
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        width: fit-content;
+      }
+
+      .settings-option:hover {
+        background: rgba(255, 255, 255, 0.15);
+      }
+
+      .settings-option.active {
+        background: rgba(70, 50, 30, 0.8);
+        border-color: rgb(125, 85, 15);
+        font-weight: bold;
+        color: #fff;
+      }
