@@ -726,6 +726,8 @@ async function fetchStartupCityWeather() {
 
     if (currentStartupCity === localStorage.getItem("lastCity") && localStorage.getItem("lastCityName")) {
       displayCityName = localStorage.getItem("lastCityName");
+    } else if (majorCities.includes(currentStartupCity)) {
+      displayCityName = currentStartupCity;
     }
 
     let fullCountry = resolvedCountry;
