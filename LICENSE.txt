@@ -1,0 +1,11 @@
+Copyright © 2026 mnvdprasad. All Rights Reserved.
+
+This project and all associated source code, assets, designs, documentation,
+and other materials are the exclusive property of mnvdprasad.
+
+No part of this project may be copied, reproduced, modified, distributed,
+published, sublicensed, sold, or used in any form, in whole or in part,
+without prior written permission from the copyright owner.
+
+Unauthorized use of this project may violate applicable copyright and
+intellectual property laws.
