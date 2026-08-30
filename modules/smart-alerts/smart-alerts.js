@@ -33,7 +33,6 @@ function generateSmartAlerts(context) {
               smartAlerts.push(msg);
           };
 
-          // Official Government Alerts (Highest Priority)
           if (officialAlerts.length > 0) {
             officialAlerts.forEach((alertText) => {
               addAlert(`🚨 OFFICIAL WARNING: ${alertText}`);
@@ -232,9 +231,7 @@ function generateSmartAlerts(context) {
           let lightningProbability =
             predictions.stormStart !== -1 ? predictions.maxPrecipProb : 0;
 
-          // ==============================
-          // EXTREME WEATHER ALERTS
-          // ==============================
+          /* =============== EXTREME WEATHER ALERTS ================*/
           if (predictions.maxTemp >= 45)
             addAlert(
               `☠️ EXTREME HEAT EMERGENCY! Temperatures could reach ${dispMax}${unit}. Avoid outdoor activities unless absolutely necessary.`,
@@ -274,9 +271,7 @@ function generateSmartAlerts(context) {
               `☠️ EXTREME UV INDEX! Avoid direct sun exposure during peak UV hours.`,
             );
 
-          // ==============================
-          // SEVERE WEATHER & COMBINATION ALERTS
-          // ==============================
+          /* =============== SEVERE WEATHER & COMBINATION ALERTS =============== */
           if (predictions.stormStart !== -1 && predictions.maxWind >= 70)
             addAlert(
               `🌪️ Expect some wild winds! Thunderstorms may bring gusts up to ${dispWind} ${currentUnits.wind}.`,
@@ -322,9 +317,7 @@ function generateSmartAlerts(context) {
               `🌪️ Very low air pressure could bring windy, wet, and unsettled weather today.`,
             );
 
-          // ==============================
-          // AIR QUALITY & HEALTH ALERTS
-          // ==============================
+          /* =============== AIR QUALITY & HEALTH ALERTS =============== */
           if (aqi > 200 && aqi <= 300)
             addAlert(
               `😷 Air quality is very unhealthy today (AQI ${aqi}). It's best to reduce outdoor activities whenever possible.`,
@@ -355,9 +348,7 @@ function generateSmartAlerts(context) {
               `💦 It's going to feel hot and sticky today. Stay hydrated if you're outdoors.`,
             );
 
-          // ==============================
-          // THUNDERSTORM & LIGHTNING ALERTS
-          // ==============================
+          /* =============== THUNDERSTORM & LIGHTNING ALERTS =============== */
           if (predictions.stormStart !== -1) {
             addAlert(
               `⛈️ Thunderstorms are expected around ${formatHour(predictions.stormStart)}. Keep an eye on the weather if you're heading out.`,
@@ -372,9 +363,7 @@ function generateSmartAlerts(context) {
           if (lightningProbability >= 50 && predictions.rainStart === -1)
             addAlert(`⚡ Dry lightning is possible today.`);
 
-          // ==============================
-          // TEMPERATURE & HEAT/COLD ALERTS
-          // ==============================
+          /* =============== TEMPERATURE & HEAT/COLD ALERTS =============== */
           if (predictions.maxTemp >= 40)
             addAlert(
               `🔥 Extreme heat is on the way! Temperatures could climb to ${dispMax}${unit} around ${formatHour(predictions.maxTempHour)}. Stay hydrated!`,
@@ -467,9 +456,7 @@ function generateSmartAlerts(context) {
           if (temp <= 0 && predictions.maxWind >= 30)
             addAlert(`🥶 Strong winds will make the freezing temperatures feel even colder today.`);
 
-          // ==============================
-          // RAIN ALERTS
-          // ==============================
+          /* =============== RAIN ALERTS =============== */
           if (predictions.rainStart !== -1) {
             let timing =
               predictions.rainStart === currentHourIndex + 1
@@ -525,9 +512,7 @@ function generateSmartAlerts(context) {
               `🚗 Expect tricky driving conditions with rain and reduced visibility.`,
             );
 
-          // ==============================
-          // SNOW & ICE ALERTS
-          // ==============================
+          /* =============== SNOW & ICE ALERTS =============== */
           if (predictions.snowStart !== -1) {
             let timing =
               predictions.snowStart === currentHourIndex + 1
@@ -556,9 +541,7 @@ function generateSmartAlerts(context) {
               `🧊 Icy patches may develop on roads and sidewalks.`,
             );
 
-          // ==============================
-          // WIND ALERTS
-          // ==============================
+          /* =============== WIND ALERTS =============== */
           if (predictions.maxWind >= 62 && predictions.maxWind < 75)
             addAlert(
               `⚠️ Strong force winds could reach ${dispWind} ${currentUnits.wind} around ${formatHour(predictions.maxWindHour)}.`,
@@ -589,9 +572,7 @@ function generateSmartAlerts(context) {
           )
             addAlert(`🍃 Enjoy a calm day with gentle winds and stable weather.`);
 
-          // ==============================
-          // FOG & VISIBILITY ALERTS
-          // ==============================
+          /* =============== FOG & VISIBILITY ALERTS =============== */
           if (visibilityVal < 0.5)
             addAlert(`☠️ Visibility is near zero in dense fog. Avoid unnecessary travel.`);
           else if (visibilityVal < 1)
@@ -610,9 +591,7 @@ function generateSmartAlerts(context) {
               `🌫️ Fog is expected around ${formatHour(predictions.fogStart)}. Visibility could drop quickly.`,
             );
 
-          // ==============================
-          // DRIVING & TRAVEL ALERTS
-          // ==============================
+          /* =============== DRIVING & TRAVEL ALERTS =============== */
           if (visibilityVal < 1 && predictions.maxWind >= 30)
             addAlert(`🚧 Driving could be difficult due to poor visibility and strong winds.`,
           );
@@ -637,9 +616,7 @@ function generateSmartAlerts(context) {
               `🚧 Strong ${dispWind} ${currentUnits.wind} winds may affect the vehicles on exposed roads.`,
             );
 
-          // ==============================
-          // UV ALERTS
-          // ==============================
+          /* =============== UV ALERTS =============== */
           if (uvIndex >= 8 && uvIndex < 11)
             addAlert(
               `☢️ The sun is especially strong today about ${uvIndex} UV index. Limit time outdoors during peak hours.`,
@@ -657,9 +634,7 @@ function generateSmartAlerts(context) {
               `⛅ Low UV today, ${uvIndex} UV index. Outdoor conditions are generally comfortable.`,
             );
 
-          // ==============================
-          // HUMIDITY & DEW POINT ALERTS
-          // ==============================
+          /* =============== HUMIDITY & DEW POINT ALERTS =============== */
           if (
             humidity >= 90 &&
             predictions.rainStart === -1 &&
@@ -706,9 +681,7 @@ function generateSmartAlerts(context) {
             );
           if (dewPoint <= 0) addAlert(`❄️ The air will feel cool, dry, and crisp today.`);
 
-          // ==============================
-          // PRESSURE ALERTS
-          // ==============================
+          /* =============== PRESSURE ALERTS =============== */
           if (pressureHpa <= 1000 && pressureHpa > 990)
             addAlert(
               `📉 Low pressure (${Math.round(pressureHpa)} hPa) developed. Unsettled weather with clouds, wind, or rain is possible.`,
@@ -720,9 +693,7 @@ function generateSmartAlerts(context) {
               `📈 High pressure (${Math.round(pressureHpa)} hPa). Conditions are likely to stay calm and mostly clear.`,
             );
 
-          // ==============================
-          // SKY CONDITION & NIGHT ALERTS
-          // ==============================
+          /* =============== SKY CONDITION & NIGHT ALERTS =============== */
           if (cloudCover <= 10)
             addAlert(`☀️ Expect bright, sunny skies for most of the day.`);
           if (cloudCover >= 30 && cloudCover <= 60)
@@ -769,9 +740,7 @@ function generateSmartAlerts(context) {
           if (!isNight && cloudCover > 90)
             addAlert(`☁️ Thick cloud cover will block much of the sunshine today.`);
 
-          // ==============================
-          // COMFORT & POSITIVE ALERTS
-          // ==============================
+          /* =============== COMFORT & POSITIVE ALERTS =============== */
           if (aqi <= 50 && aqi > 0)
             addAlert(
               `🌿 Air quality is excellent today (AQI ${aqi}). Enjoy the fresh air outdoors.`,
@@ -823,9 +792,7 @@ function generateSmartAlerts(context) {
           )
             addAlert(`🌤️ The weather should be comfortable for most outdoor activities today.`);
 
-          // ==============================
-          // RANDOM ATMOSPHERE & SEASONAL ALERTS
-          // ==============================
+          /* =============== RANDOM ATMOSPHERE & SEASONAL ALERTS =============== */
           if (cloudCover < 5 && humidity < 40)
             addAlert(`☀️ Expect crystal-clear skies with comfortably dry air.`);
           if (humidity > 85 && cloudCover > 90)
@@ -863,7 +830,6 @@ function initSmartAlertsCycle(smartAlerts) {
       const containerEl = textEl.parentElement;
 
       if (window.alertTimer) clearTimeout(window.alertTimer);
-
       const alertString = window.currentSmartAlerts[window.currentAlertIndex];
       const spaceIndex = alertString.indexOf(" ");
       const icon = spaceIndex > -1 ? alertString.substring(0, spaceIndex) : "🔔";
@@ -880,14 +846,13 @@ function initSmartAlertsCycle(smartAlerts) {
         textEl.style.opacity = "1";
         iconEl.style.opacity = "1";
 
-        // Wait 1 second before starting to roll
         setTimeout(() => {
           const textWidth = textEl.scrollWidth;
           const containerWidth = containerEl.clientWidth;
 
           if (textWidth > containerWidth) {
             const distance = textWidth - containerWidth;
-            const speed = 90; // ms per pixel for a very slow roll
+            const speed = 90;
             const duration = distance * speed;
 
             textEl.style.transition = `transform ${duration}ms linear`;
@@ -895,9 +860,8 @@ function initSmartAlertsCycle(smartAlerts) {
 
             window.alertTimer = setTimeout(() => {
               if (window.currentSmartAlerts.length > 1) nextAlert();
-            }, duration + 3000); // Wait 3s after it reaches the end
+            }, duration + 3000);
           } else {
-            // If it perfectly fits and doesn't need to roll, wait 4s total
             window.alertTimer = setTimeout(() => {
               if (window.currentSmartAlerts.length > 1) nextAlert();
             }, 4000);
@@ -915,10 +879,8 @@ function initSmartAlertsCycle(smartAlerts) {
     const nextBtn = document.getElementById("smart-alert-next");
     if (nextBtn) {
       nextBtn.style.display = "flex";
-      // Prevent multiple listeners if called multiple times
       const newNextBtn = nextBtn.cloneNode(true);
       nextBtn.parentNode.replaceChild(newNextBtn, nextBtn);
-      
       newNextBtn.addEventListener("click", (e) => {
         if (e) e.stopPropagation();
         const pill = document.getElementById("smart-alerts-display");
