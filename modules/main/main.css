@@ -1,4 +1,3 @@
-/* Styling for the main weather text info, with animations */
 .weather-info {
   position: relative;
   z-index: 10;
@@ -7,13 +6,13 @@
 
 .weather-info > * {
   opacity: 0;
-  animation: zoomOutIn 0.3s ease forwards;
+  animation: zoomOut 0.3s ease-out forwards;
 }
 
-@keyframes zoomOutIn {
+@keyframes zoomOut {
   from {
     opacity: 0;
-    transform: scale(1.2);
+    transform: scale(1.3);
   }
   to {
     opacity: 1;
@@ -37,7 +36,6 @@
   z-index: 99999;
 }
 
-/* Tooltips for extra info */
 .info-icon-wrapper {
   position: relative;
   display: inline-block;
@@ -285,7 +283,7 @@
 /* Styling and animations for the main weather icon */
 .weather-icon-container {
   opacity: 0;
-  animation: zoomOutIn 0.5s ease forwards 0.4s;
+  animation: zoomOutIn 0.5s ease-out forwards;
   position: absolute;
   top: -10px;
   right: 0;
@@ -308,6 +306,12 @@
   height: 160px;
   filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.3));
   animation: floatIcon 4s ease-in-out infinite;
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+.weather-box.disable-animations .weather-icon {
+  animation: none !important;
 }
 
 @keyframes floatIcon {
@@ -320,7 +324,6 @@
   }
 }
 
-
 /* ==================== DETAILS GRID & TABS ==================== */
 /* Styling for the grid of detailed weather metrics */
 .details-grid {
@@ -329,11 +332,77 @@
   gap: 6px;
   margin-top: 10px;
   width: 100%;
-  opacity: 0;
-  animation: zoomOutIn 0.5s ease forwards 0.5s;
+  }
+
+@keyframes gridZoomOut {
+  0% {
+    opacity: 0;
+    transform: scale(1.12);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
-/* Individual glassmorphism styled detail panels */
+.details-grid > * {
+  opacity: 0;
+  animation: gridZoomOut 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
+}
+
+.details-grid > *:nth-child(1) {
+  animation-delay: 0.10s;
+}
+
+.details-grid > *:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.details-grid > *:nth-child(3) {
+  animation-delay: 0.20s;
+}
+
+.details-grid > *:nth-child(4) {
+  animation-delay: 0.25s;
+}
+
+.details-grid > *:nth-child(5) {
+  animation-delay: 0.30s;
+}
+
+.details-grid > *:nth-child(6) {
+  animation-delay: 0.35s;
+}
+
+.details-grid > *:nth-child(7) {
+  animation-delay: 0.40;
+}
+
+.details-grid > *:nth-child(8) {
+  animation-delay: 0.45s;
+}
+
+.details-grid > *:nth-child(9) {
+  animation-delay: 0.50s;
+}
+
+.details-grid > *:nth-child(10) {
+  animation-delay: 0.55s;
+}
+
+.details-grid > *:nth-child(11) {
+  animation-delay: 0.60s;
+}
+
+.details-grid > *:nth-child(12) {
+  animation-delay: 0.65s;
+}
+
+.details-grid > *:nth-child(13) {
+  animation-delay: 0.70s;
+}
+
 .glass-tab {
   background: linear-gradient(
     135deg,
@@ -419,7 +488,6 @@
             var(--glow-after-soft) 90%,
             transparent 100%
         ) bottom right/2px 100% no-repeat;
-
     filter:blur(0.8px);
 }
 
@@ -615,7 +683,6 @@
   margin-top: 2px;
 }
 
-/* specific layout for Air Quality Index with color bar indicator */
 .aqi-header-row {
   display: flex;
   align-items: center;
@@ -692,7 +759,6 @@
   font-weight: bold;
 }
 
-/* Layout for displaying specific pollutant levels */
 .pollutants-container {
   display: flex;
   flex-direction: row;
@@ -727,8 +793,8 @@
 }
 .pollutant-unit {
   font-size: 0.35rem;
-  opacity: 0.7;
-  font-weight: 300;
+  opacity: 0.9;
+  font-weight: 600;
   margin-left: 1px;
 }
 .pollutant-status {
@@ -738,7 +804,22 @@
   margin-bottom: -8px;
 }
 
-/* Strictly disable animations when the page is in the background */
 body.animations-paused * {
   animation-play-state: paused !important;
+}
+
+@media (max-width: 480px) {
+  .weather-box img {
+    filter: none !important;
+  }
+  .weather-icon {
+    filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.25)) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .hourly-content-container,
+  .daily-content-container {
+    contain: layout paint;
+  }
 }
