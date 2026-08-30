@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 128 128">
+  <g clip-path="url(#sun-set)">
+    <g>
+      <path stroke="#8b2500" stroke-linecap="round" stroke-width="4" d="M37 92H91" />
+      <path stroke="#8b2500" stroke-linecap="round" stroke-width="4" d="M42 100H71 M77 100H86" />
+    </g>
+    <g>
+      <mask id="sun-set_mask" width="128" height="81" x="0" y="9" maskUnits="userSpaceOnUse" style="mask-type:alpha">
+        <path fill="#000" d="M0 9h128v81H0z" />
+      </mask>
+      <g mask="url(#sun-set_mask)">
+        <g transform="translate(0, 8)">
+          <circle cx="64" cy="82" r="19.5" fill="url(#sun-set_paint)" stroke="#ff6f3b" />
+          <g>
+            <path fill="#fd6f3b" d="M61 37a3 3 0 1 1 6 0v14a3 3 0 0 1-6 0zM93.699 48.059a3 3 0 1 1 4.242 4.243l-9.9 9.899a3 3 0 1 1-4.242-4.243zM109 79a3 3 0 1 1 0 6H95a3 3 0 1 1 0-6zM97.941 111.698a3 3 0 0 1-4.243 4.243l-9.899-9.899a3 3 0 0 1 4.243-4.243zM61 113a3 3 0 1 1 6 0v14a3 3 0 1 1-6 0zM39.958 101.799a3 3 0 1 1 4.243 4.243l-9.9 9.899a3 3 0 1 1-4.242-4.243zM33 79a3 3 0 1 1 0 6H19a3 3 0 0 1 0-6zM44.201 57.958a3 3 0 1 1-4.243 4.243l-9.9-9.9a3 3 0 1 1 4.243-4.242z" />
+            
+          </g>
+        </g>
+      </g>
+    </g>
+  </g>
+  <defs>
+    <linearGradient id="sun-set_paint" x1="64" x2="64" y1="62" y2="102" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ff7f50" />
+      <stop offset="1" stop-color="#ff6f3b" />
+    </linearGradient>
+    <clipPath id="sun-set">
+      <rect width="128" height="128" fill="#fff" />
+    </clipPath>
+  </defs>
+</svg>
