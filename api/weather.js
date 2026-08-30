@@ -1,17 +1,14 @@
 export default async function handler(req, res) {
   const { action, q, zip, lat, lon } = req.query;
 
-  // Retrieve API keys from environment variables
-  const openWeatherApiKey = process.env.OPENWEATHER_API_KEY;
-  const weatherApiKey = process.env.WEATHERAPI_KEY;
+  const openWeatherApiKey = req.query.openweather_key || process.env.OPENWEATHER_API_KEY;
+  const weatherApiKey = req.query.weatherapi_key || process.env.WEATHERAPI_KEY;
 
   if (!action) {
     return res.status(400).json({ error: "Action parameter is required" });
   }
 
   let url = "";
-
-  // Route the request based on the action parameter
   if (action === "geo_zip") {
     if (!zip) return res.status(400).json({ error: "Zip parameter required" });
     url = `https://api.openweathermap.org/geo/1.0/zip?zip=${encodeURIComponent(zip)}&appid=${openWeatherApiKey}`;
