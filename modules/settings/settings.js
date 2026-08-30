@@ -1,7 +1,7 @@
 function toggleRemember() {
   const isChecked = document.getElementById("remember-toggle").checked;
   localStorage.setItem("rememberCity", isChecked);
-  
+
   if (!isChecked) {
     localStorage.removeItem("lastCity");
     localStorage.removeItem("lastLat");
@@ -14,7 +14,7 @@ function toggleRemember() {
   } else {
     const cityInput = document.getElementById("city").value.trim();
     if (cityInput) localStorage.setItem("lastCity", cityInput);
-    
+
     localStorage.setItem("savedUnits", JSON.stringify(currentUnits));
     localStorage.setItem("savedTimeFormat", currentTimeFormat);
     localStorage.setItem(
@@ -31,16 +31,15 @@ function toggleRemember() {
 
 function toggleAlerts() {
   const isChecked = document.getElementById("alerts-toggle").checked;
-  
+
   if (document.getElementById("remember-toggle").checked) {
     localStorage.setItem("hideAlerts", isChecked);
   }
-  
+
   const alertWrapper = document.getElementById("smart-alert-wrapper");
   if (alertWrapper) {
-    const hasAlerts =
-      document.getElementById("smart-alerts-display") !== null;
-      
+    const hasAlerts = document.getElementById("smart-alerts-display") !== null;
+
     if (!isChecked && hasAlerts) {
       alertWrapper.style.height = "18px";
       alertWrapper.style.opacity = "1";
@@ -57,11 +56,13 @@ function toggleAlerts() {
 
 function toggleAnimations() {
   const isChecked = document.getElementById("animations-toggle").checked;
-  
+
   if (document.getElementById("remember-toggle").checked) {
     localStorage.setItem("disableAnimations", isChecked);
+  } else {
+    localStorage.setItem("disableAnimations", isChecked);
   }
-  
+
   const weatherBox = document.querySelector(".weather-box");
   if (weatherBox) {
     if (isChecked) {
@@ -70,12 +71,38 @@ function toggleAnimations() {
       weatherBox.classList.remove("disable-animations");
     }
   }
+
+  window.preloadedHomeHTML = null;
+  sessionStorage.removeItem("cachedWeatherHTML");
+  sessionStorage.removeItem("cachedWeatherCity");
+
+  const homeResult = document.getElementById("home-result");
+  const isHomeVisible = homeResult && (homeResult.style.display === "block" || homeResult.style.display === "");
+  const isResultVisible = !isHomeVisible && !!document.querySelector(".details-grid");
+  if (isResultVisible) {
+    if (document.getElementById("city").value.trim() !== "") {
+      getWeather(true);
+    } else if (
+      localStorage.getItem("lastLat") &&
+      localStorage.getItem("lastLon")
+    ) {
+      getWeather(
+        true,
+        localStorage.getItem("lastLat"),
+        localStorage.getItem("lastLon"),
+      );
+    } else {
+      fetchStartupCityWeather();
+    }
+  } else {
+    fetchStartupCityWeather();
+  }
 }
 
 function setAutoRefreshSelect(value) {
   const minutes = parseInt(value);
   currentRefreshInterval = minutes;
-  
+
   if (document.getElementById("remember-toggle").checked) {
     localStorage.setItem("autoRefresh", minutes);
   }
@@ -83,7 +110,7 @@ function setAutoRefreshSelect(value) {
   if (weatherInterval) {
     clearTimeout(weatherInterval);
   }
-  
+
   if (minutes > 0) {
     weatherInterval = setTimeout(() => {
       const isMainWeatherRendered = !!document.querySelector(".details-grid");
@@ -95,10 +122,9 @@ function setAutoRefreshSelect(value) {
 }
 
 function setTimeFormat(event, format) {
-  const options =
-    event.target.parentElement.querySelectorAll(".time-opt");
+  const options = event.target.parentElement.querySelectorAll(".time-opt");
   options.forEach((opt) => opt.classList.remove("active"));
-  
+
   event.target.classList.add("active");
   currentTimeFormat = format;
 
@@ -106,12 +132,21 @@ function setTimeFormat(event, format) {
     localStorage.setItem("savedTimeFormat", currentTimeFormat);
   }
 
-  const isResultVisible = !!document.querySelector(".details-grid");
+  const homeResult = document.getElementById("home-result");
+  const isHomeVisible = homeResult && (homeResult.style.display === "block" || homeResult.style.display === "");
+  const isResultVisible = !isHomeVisible && !!document.querySelector(".details-grid");
   if (isResultVisible) {
     if (document.getElementById("city").value.trim() !== "") {
       getWeather(true);
-    } else if (localStorage.getItem("lastLat") && localStorage.getItem("lastLon")) {
-      getWeather(true, localStorage.getItem("lastLat"), localStorage.getItem("lastLon"));
+    } else if (
+      localStorage.getItem("lastLat") &&
+      localStorage.getItem("lastLon")
+    ) {
+      getWeather(
+        true,
+        localStorage.getItem("lastLat"),
+        localStorage.getItem("lastLon"),
+      );
     } else {
       fetchStartupCityWeather();
     }
@@ -125,7 +160,7 @@ function toggleUnits() {
   const header = document
     .getElementById("units-format-box")
     .querySelector(".settings-glass-header");
-    
+
   options.classList.toggle("expanded");
   header.classList.toggle("expanded");
 }
@@ -134,20 +169,29 @@ function setUnit(event, type, value) {
   const row = event.target.parentElement;
   const options = row.querySelectorAll(".settings-option");
   options.forEach((opt) => opt.classList.remove("active"));
-  
+
   event.target.classList.add("active");
   currentUnits[type] = value;
 
   if (document.getElementById("remember-toggle").checked) {
     localStorage.setItem("savedUnits", JSON.stringify(currentUnits));
   }
-  
-  const isResultVisible = !!document.querySelector(".details-grid");
+
+  const homeResult = document.getElementById("home-result");
+  const isHomeVisible = homeResult && (homeResult.style.display === "block" || homeResult.style.display === "");
+  const isResultVisible = !isHomeVisible && !!document.querySelector(".details-grid");
   if (isResultVisible) {
     if (document.getElementById("city").value.trim() !== "") {
       getWeather(true);
-    } else if (localStorage.getItem("lastLat") && localStorage.getItem("lastLon")) {
-      getWeather(true, localStorage.getItem("lastLat"), localStorage.getItem("lastLon"));
+    } else if (
+      localStorage.getItem("lastLat") &&
+      localStorage.getItem("lastLon")
+    ) {
+      getWeather(
+        true,
+        localStorage.getItem("lastLat"),
+        localStorage.getItem("lastLon"),
+      );
     } else {
       fetchStartupCityWeather();
     }
@@ -159,11 +203,12 @@ function setUnit(event, type, value) {
 function initSettings() {
   const weatherBox = document.querySelector(".weather-box");
   if (weatherBox) {
-    weatherBox.insertAdjacentHTML('beforeend', settingsHTML);
+    weatherBox.insertAdjacentHTML("beforeend", settingsHTML);
   }
 
   const rememberToggle = document.getElementById("remember-toggle");
-  if (localStorage.getItem("rememberCity") === "true") {
+  if (localStorage.getItem("rememberCity") !== "false") {
+    localStorage.setItem("rememberCity", "true");
     if (rememberToggle) rememberToggle.checked = true;
 
     const savedTimeFormat = localStorage.getItem("savedTimeFormat");
@@ -192,9 +237,7 @@ function initSettings() {
           );
           if (unitOption) {
             const siblings =
-              unitOption.parentElement.querySelectorAll(
-                ".settings-option",
-              );
+              unitOption.parentElement.querySelectorAll(".settings-option");
             siblings.forEach((opt) => opt.classList.remove("active"));
             unitOption.classList.add("active");
           }
@@ -273,9 +316,9 @@ function initSettings() {
               .querySelectorAll(".refreshCustom-option")
               .forEach((opt) => opt.classList.remove("active"));
             this.classList.add("active");
-            if (refreshTextLocal) refreshTextLocal.textContent = this.textContent;
+            if (refreshTextLocal)
+              refreshTextLocal.textContent = this.textContent;
             refreshSelect.classList.remove("open");
-
             setAutoRefreshSelect(this.getAttribute("data-value"));
           });
         });
@@ -318,7 +361,11 @@ function initSettings() {
   const unitOptionsList = document.querySelectorAll(".settings-option");
   unitOptionsList.forEach((opt) => {
     opt.addEventListener("click", function (e) {
-      setUnit(e, this.getAttribute("data-unit-type"), this.getAttribute("data-unit-value"));
+      setUnit(
+        e,
+        this.getAttribute("data-unit-type"),
+        this.getAttribute("data-unit-value"),
+      );
     });
   });
 
@@ -358,23 +405,6 @@ function initSettings() {
     }
   });
 
-  const weatherBoxObserver = document.querySelector(".weather-box");
-  if (weatherBoxObserver) {
-    new ResizeObserver(() => {
-      const match = weatherBoxObserver.style.transform.match(/scale\(([^)]+)\)/);
-      const scale = match ? parseFloat(match[1]) : 1;
-      const visualDiff =
-        weatherBoxObserver.offsetHeight * scale - weatherBoxObserver.offsetHeight;
-      weatherBoxObserver.style.marginBottom = `${visualDiff}px`;
-    }).observe(weatherBoxObserver);
-  }
-
-  window.addEventListener("resize", () => {
-    if (typeof adjustZoom === "function") adjustZoom();
-  });
-  setTimeout(() => {
-    if (typeof adjustZoom === "function") adjustZoom();
-  }, 100);
 }
 
 document.addEventListener("DOMContentLoaded", initSettings);
@@ -394,7 +424,7 @@ const settingsHTML = `
           <div class="settings-glass-box row-layout">
             <span><i class="ti ti-bookmarks"></i> Remember me</span>
             <label class="switch">
-              <input type="checkbox" id="remember-toggle" />
+              <input type="checkbox" id="remember-toggle" checked />
               <span class="slider"></span>
             </label>
           </div>
@@ -454,7 +484,7 @@ const settingsHTML = `
           </div>
           <!-- Unit selection panel for temperature, precipitation, wind, visibility, pressure -->
           <div class="settings-glass-box" id="units-format-box">
-            <div class="settings-glass-header" id="units-toggle-btn">
+            <div class="settings-glass-header" style="font-weight: bold;" id="units-toggle-btn">
               <span><i class="ti ti-adjustments-horizontal"></i> Units</span>
               <i class="bx bx-chevron-down" style="transition: transform 0.3s ease;"></i>
             </div>
