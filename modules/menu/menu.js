@@ -1,4 +1,4 @@
-function toggleAbout() {
+function toggleAbout(skipPushState = false) {
   const aboutPanel = document.getElementById("about-us-panel");
   const mainMenu = document.getElementById("main-menu");
   const searchContainer = document.querySelector(".search-container");
@@ -14,12 +14,12 @@ function toggleAbout() {
 
   const privacyPanel = document.getElementById("privacy-panel");
   if (privacyPanel && privacyPanel.classList.contains("active")) {
-    togglePrivacy();
+    togglePrivacy(true);
   }
 
   const termsPanel = document.getElementById("terms-panel");
   if (termsPanel && termsPanel.classList.contains("active")) {
-    toggleTerms();
+    toggleTerms(true);
   }
 
   if (aboutPanel) {
@@ -30,9 +30,11 @@ function toggleAbout() {
       searchContainer.style.display = isActive ? "none" : "flex";
     if (resultContainer)
       resultContainer.style.display = isActive ? "none" : "block";
+    const homeResult = document.getElementById("home-result");
+    if (homeResult)
+      homeResult.style.display = isActive ? "none" : (window.location.hash.startsWith("#weather/") ? "none" : "block");
     if (timeDisplay) timeDisplay.style.display = isActive ? "none" : "block";
     if (settingsBtn) settingsBtn.style.display = isActive ? "none" : "block";
-    if (menuBtn) menuBtn.style.display = isActive ? "none" : "";
 
     const weatherBox = document.querySelector(".weather-box");
     if (weatherBox) {
@@ -42,10 +44,14 @@ function toggleAbout() {
         weatherBox.classList.remove("about-mode");
       }
     }
+    
+    if (typeof window.pushAppState === "function" && !skipPushState) {
+      window.pushAppState(isActive ? "#about" : "#home");
+    }
   }
 }
 
-function togglePrivacy() {
+function togglePrivacy(skipPushState = false) {
   const privacyPanel = document.getElementById("privacy-panel");
   const mainMenu = document.getElementById("main-menu");
   const searchContainer = document.querySelector(".search-container");
@@ -61,12 +67,12 @@ function togglePrivacy() {
 
   const aboutPanel = document.getElementById("about-us-panel");
   if (aboutPanel && aboutPanel.classList.contains("active")) {
-    toggleAbout();
+    toggleAbout(true);
   }
 
   const termsPanel = document.getElementById("terms-panel");
   if (termsPanel && termsPanel.classList.contains("active")) {
-    toggleTerms();
+    toggleTerms(true);
   }
 
   if (privacyPanel) {
@@ -77,9 +83,11 @@ function togglePrivacy() {
       searchContainer.style.display = isActive ? "none" : "flex";
     if (resultContainer)
       resultContainer.style.display = isActive ? "none" : "block";
+    const homeResult = document.getElementById("home-result");
+    if (homeResult)
+      homeResult.style.display = isActive ? "none" : (window.location.hash.startsWith("#weather/") ? "none" : "block");
     if (timeDisplay) timeDisplay.style.display = isActive ? "none" : "block";
     if (settingsBtn) settingsBtn.style.display = isActive ? "none" : "block";
-    if (menuBtn) menuBtn.style.display = isActive ? "none" : "";
 
     const weatherBox = document.querySelector(".weather-box");
     if (weatherBox) {
@@ -89,10 +97,14 @@ function togglePrivacy() {
         weatherBox.classList.remove("about-mode");
       }
     }
+
+    if (typeof window.pushAppState === "function" && !skipPushState) {
+      window.pushAppState(isActive ? "#privacy" : "#home");
+    }
   }
 }
 
-function toggleTerms() {
+function toggleTerms(skipPushState = false) {
   const termsPanel = document.getElementById("terms-panel");
   const mainMenu = document.getElementById("main-menu");
   const searchContainer = document.querySelector(".search-container");
@@ -108,12 +120,12 @@ function toggleTerms() {
 
   const aboutPanel = document.getElementById("about-us-panel");
   if (aboutPanel && aboutPanel.classList.contains("active")) {
-    toggleAbout();
+    toggleAbout(true);
   }
 
   const privacyPanel = document.getElementById("privacy-panel");
   if (privacyPanel && privacyPanel.classList.contains("active")) {
-    togglePrivacy();
+    togglePrivacy(true);
   }
 
   if (termsPanel) {
@@ -124,9 +136,11 @@ function toggleTerms() {
       searchContainer.style.display = isActive ? "none" : "flex";
     if (resultContainer)
       resultContainer.style.display = isActive ? "none" : "block";
+    const homeResult = document.getElementById("home-result");
+    if (homeResult)
+      homeResult.style.display = isActive ? "none" : (window.location.hash.startsWith("#weather/") ? "none" : "block");
     if (timeDisplay) timeDisplay.style.display = isActive ? "none" : "block";
     if (settingsBtn) settingsBtn.style.display = isActive ? "none" : "block";
-    if (menuBtn) menuBtn.style.display = isActive ? "none" : "";
 
     const weatherBox = document.querySelector(".weather-box");
     if (weatherBox) {
@@ -135,6 +149,10 @@ function toggleTerms() {
       } else {
         weatherBox.classList.remove("about-mode");
       }
+    }
+
+    if (typeof window.pushAppState === "function" && !skipPushState) {
+      window.pushAppState(isActive ? "#terms" : "#home");
     }
   }
 }
@@ -191,8 +209,6 @@ const aboutUsHTML = `
           <p>WeatherBox does not independently generate meteorological forecasts. Weather information is provided by external data providers and is presented through the WeatherBox platform.</p>
           <p>While we strive to display information accurately and promptly, WeatherBox cannot guarantee the completeness, accuracy, or uninterrupted availability of third-party data.</p>
           <p>Users should consult official meteorological and governmental weather authorities when weather information is required for safety-critical decisions.</p>
-
-
 
           <p>Thank you for using WeatherBox.</p>
         </div>
