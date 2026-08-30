@@ -8,16 +8,13 @@ function triggerLightning(selector) {
   el.classList.remove("striking");
   void el.offsetWidth;
   el.classList.add("striking");
-
-  // Randomize position
   el.style.left = Math.floor(Math.random() * 70) + "%";
   el.style.right = "auto";
   const scale = Math.random() > 0.5 ? 1 : -1;
   el.style.transform = `scaleX(${scale})`;
-
   const isSlow = selector.includes("3") || selector.includes("4");
   const animationDuration = isSlow ? 4000 : 3000;
-  const nextDelay = Math.random() * 5000 + 15000; // Calculate a random delay for the next strike (between 15 and 20 seconds)
+  const nextDelay = Math.random() * 5000 + 15000;
   lightningTimers[selector] = setTimeout(() => {
     el.classList.remove("striking");
     if (weatherBox.className.includes("thunderstorm")) {
@@ -39,8 +36,8 @@ function triggerThunderFlash(selector) {
   el.classList.remove("flashing");
   void el.offsetWidth;
   el.classList.add("flashing");
-  const animationDuration = 2000; // Define the duration of the thunder flash animation
-  const nextDelay = Math.random() * 6000 + 4000; // Calculate a random delay for the next flash (between 4 and 10 seconds)
+  const animationDuration = 2000;
+  const nextDelay = Math.random() * 6000 + 4000;
   lightningTimers[selector] = setTimeout(() => {
     el.classList.remove("flashing");
     if (weatherBox.className.includes("thunderstorm")) {
@@ -905,7 +902,7 @@ function handleTestAnimations(city) {
   return false;
 }
 
-// Strictly disable animations and timers when running in the background to prevent lag
+// Strictly disable animations and timers when running in the background
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
     document.body.classList.add("animations-paused");
