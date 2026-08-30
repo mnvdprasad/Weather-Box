@@ -1,4 +1,3 @@
-/* ==================== TOP LEFT CONTROLS ==================== */
 .top-left-controls {
     position: absolute;
     top: 10px;
@@ -20,7 +19,7 @@
 
 .top-left-icon:hover {
     opacity: 1;
-    transform: scale(1.05);
+    transform: scale(1.1);
 }
 
 .weather-box.clear-day .top-left-icon,
@@ -71,7 +70,6 @@
     min-width: 180px;
 }
 
-/* Layout rules for the content area inside the main menu, stacking items vertically with spacing */
 #main-menu .settings-content {
     display: flex;
     flex-direction: column;
@@ -102,12 +100,12 @@
     color: rgb(255, 195, 100);
 }
 
-/* About us page */
 .weather-box.about-mode {
     background: #06184d !important;
 }
 
-/* Hide all animated atmospheric weather layers when in about mode to keep the focus on text */
+.weather-box.about-mode::before,
+.weather-box.about-mode::after,
 .weather-box.about-mode .lightning,
 .weather-box.about-mode .thunder-flash,
 .weather-box.about-mode .rain-layer,
@@ -115,11 +113,11 @@
 .weather-box.about-mode .snow-layer,
 .weather-box.about-mode .fog-layer,
 .weather-box.about-mode .cloud-layer,
-.weather-box.about-mode .overcast-cloud-layer {
+.weather-box.about-mode .overcast-cloud-layer,
+.weather-box.about-mode #radar-btn {
     display: none !important;
 }
 
-/* Base styling for the informational panels */
 .about-panel {
     z-index: 10;
     display: none;
@@ -141,7 +139,6 @@
     margin-bottom: 15px;
 }
 
-/* Main title styling within the informational content */
 .about-content h2 {
     margin: 0 0 15px 0;
     font-size: 1.5rem;
@@ -150,7 +147,6 @@
     letter-spacing: 0.5px;
 }
 
-/* Styling for the close/back button container */
 .about-close {
     display: inline-flex;
     align-items: center;
@@ -170,7 +166,6 @@
     transform: scale(1.01);
 }
 
-/* Typography and layout for the body paragraphs in the informational panels */
 .about-content {
     font-family: 'Calibri', sans-serif;
     font-size: 0.7rem;
@@ -178,7 +173,6 @@
     color: rgba(255, 255, 255, 0.9);
 }
 
-/* Sub-heading styling inside the body content */
 .about-content h3 {
     margin-top: 10px;
     margin-bottom: 12px;
@@ -188,12 +182,10 @@
     font-weight: 500;
 }
 
-/* Paragraph spacing inside the body content */
 .about-content p {
     margin-bottom: 12px;
 }
 
-/* Custom Webkit scrollbar styling specifically for the About Panel to match the dark theme */
 .about-panel::-webkit-scrollbar {
     width: 6px;
 }
@@ -204,5 +196,3 @@
     background-color: rgba(255, 255, 255, 0.2);
     border-radius: 10px;
 }
-
-
