@@ -1,4 +1,4 @@
-/* Starts an interval that continually updates the displayed local time for the searched city. */
+/* Starts an interval that continually updates the displayed local time for the searched city.*/
 function startClock(timezoneOffset) {
   if (timeInterval) clearInterval(timeInterval);
 
@@ -33,11 +33,25 @@ function startClock(timezoneOffset) {
 }
 
 window.isRadarView = false;
-window.toggleRadarView = function (showRadar) {
+window.toggleRadarView = function (showRadar, skipPushState = false) {
   if (typeof showRadar !== "undefined") {
     window.isRadarView = showRadar;
   } else {
     window.isRadarView = !window.isRadarView;
+  }
+
+  if (typeof window.pushAppState === "function" && !skipPushState) {
+    if (window.isRadarView) {
+      window.pushAppState("#radar");
+    } else {
+      const cityInput = document.getElementById("city");
+      const city = window.selectedLocation ? window.selectedLocation.name : (cityInput ? cityInput.value : "");
+      if (city) {
+        window.pushAppState(`#weather/${encodeURIComponent(city)}`);
+      } else {
+        window.pushAppState("#home");
+      }
+    }
   }
 
   const detailsGrid = document.querySelector(".details-grid");
@@ -81,7 +95,6 @@ window.toggleRadarView = function (showRadar) {
       }
     } else {
       radarContainer.style.display = "flex";
-      // Update iframe src with current coords
       const iframe = radarContainer.querySelector("iframe");
       if (iframe) {
         const lat = window.selectedLocation ? window.selectedLocation.lat : 0;
@@ -96,8 +109,7 @@ window.toggleRadarView = function (showRadar) {
   }
 };
 
-/* Switches the main forecast view between Hourly and Daily tabs. */
-window.currentForecastTab = "daily";
+window.currentForecastTab = "hourly";
 window.currentHourlyTab = "temp";
 window.currentDailyTab = "temp";
 
@@ -174,7 +186,6 @@ function switchForecastTab(tab) {
   }
 }
 
-/* Switches the sub-tab view (Temperature and Precipitation) for the Hourly forecast. */
 function switchHourlySubTab(tab) {
   window.currentHourlyTab = tab;
   const tempTab = document.getElementById("hourly-temp-tab");
@@ -210,7 +221,6 @@ function switchHourlySubTab(tab) {
   }
 }
 
-/* Switches the sub-tab view (Temperature and Precipitation) for the Daily forecast. */
 function switchDailySubTab(tab) {
   window.currentDailyTab = tab;
   const tempTab = document.getElementById("daily-temp-tab");
@@ -289,7 +299,7 @@ function attachDragToScroll() {
           track.style.display = "block";
           thumb.style.width = `${Math.max(20, ratio * track.clientWidth)}px`;
         }
-        container.addEventListener("scroll", updateThumb);
+        container.addEventListener("scroll", updateThumb, { passive: true });
       }
 
       thumb.onmousedown = (e) => {
@@ -410,9 +420,39 @@ async function getWeather(
   if (startupInterval) clearInterval(startupInterval);
   const cityInput = document.getElementById("city").value.trim();
   const city = cityInput.toLowerCase();
+
+  if (!isAutoUpdate) {
+    if (!navigator.onLine) {
+      const sBox = document.getElementById("suggestions-box");
+      if (sBox) sBox.style.display = "none";
+      showMessage(
+        "No internet connection",
+        "Please check your network settings and try again.",
+      );
+      return;
+    }
+
+    if (cityInput === "" && !overrideName && !overrideLat && !overrideLon) {
+      const sBox = document.getElementById("suggestions-box");
+      if (sBox) sBox.style.display = "none";
+      showMessage(
+        "Please enter a city name",
+        "The search field is empty. Type a location and try again.",
+      );
+      return;
+    }
+  }
+
   const result = document.getElementById("result");
   const messageBox = document.getElementById("message-box");
   const suggestionsBox = document.getElementById("suggestions-box");
+  const homeResult = document.getElementById("home-result");
+  
+  if (result && homeResult && homeResult.style.display !== "none" && !isAutoUpdate) {
+    result.innerHTML = "";
+  }
+  
+  if (result) result.style.display = "block";
 
   if (suggestionsBox) suggestionsBox.style.display = "none";
 
@@ -423,29 +463,22 @@ async function getWeather(
     return;
   }
 
-  // Handle UI updates (loaders, clear old data) for a fresh manual search
   if (!isAutoUpdate) {
+    const targetCity = overrideName || cityInput;
+    if (targetCity) {
+      const newHash = `#weather/${encodeURIComponent(targetCity)}`;
+      if (window.location.hash !== newHash) {
+        window.history.pushState({ city: targetCity }, "", newHash);
+      }
+    }
+
+    window.currentRenderedCityHash = city;
+    document.getElementById("city").blur();
     if (weatherInterval) clearTimeout(weatherInterval);
 
     document.getElementById("current-time").innerText = "";
     if (timeInterval) clearInterval(timeInterval);
     messageBox.style.display = "none";
-
-    if (!navigator.onLine) {
-      showMessage(
-        "No internet connection",
-        "Please check your network settings and try again.",
-      );
-      return;
-    }
-
-    if (cityInput === "") {
-      showMessage(
-        "Please enter a city name",
-        "The search field is empty. Type a location and try again.",
-      );
-      return;
-    }
 
     const loaderHtml = `
           <div id="main-loader" class="loader-container" style="position: absolute; top: 10px; left: 0; width: 100%; z-index: 100; display: flex; justify-content: center; align-items: center;">
@@ -468,9 +501,9 @@ async function getWeather(
     const existingLoader = document.getElementById("main-loader");
     if (existingLoader) existingLoader.remove();
 
-    if (result.innerHTML.trim() !== '') {
-      result.style.position = 'relative';
-      result.insertAdjacentHTML('beforeend', loaderHtml);
+    if (result.innerHTML.trim() !== "") {
+      result.style.position = "relative";
+      result.insertAdjacentHTML("beforeend", loaderHtml);
     } else {
       result.innerHTML = loaderHtml;
     }
@@ -624,13 +657,10 @@ async function getWeather(
       try {
         let isZip = /\d/.test(cityInput);
         if (isZip) {
-          /*
           const owmZipRes = await fetch(
-            `https://api.openweathermap.org/geo/1.0/zip?zip=${encodeURIComponent(cityInput)}&appid=${apiKey}`,
-          );
-          */
-          const owmZipRes = await fetch(
-            `/api/weather?action=geo_zip&zip=${encodeURIComponent(cityInput)}`,
+            window.getWeatherEndpoint("geo_zip", {
+              zip: encodeURIComponent(cityInput),
+            }),
           );
           if (owmZipRes.ok) {
             const owmZipData = await owmZipRes.json();
@@ -660,13 +690,11 @@ async function getWeather(
         }
 
         if (!hasGeoData) {
-          /*
           const owmRes = await fetch(
-            `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(cityInput)}&limit=1&appid=${apiKey}`,
-          );
-          */
-          const owmRes = await fetch(
-            `/api/weather?action=geo_direct&q=${encodeURIComponent(cityInput)}&limit=1`,
+            window.getWeatherEndpoint("geo_direct", {
+              q: encodeURIComponent(cityInput),
+              limit: 1,
+            }),
           );
           const owmData = await owmRes.json();
           if (owmData && owmData.length > 0) {
@@ -713,11 +741,11 @@ async function getWeather(
       fullAddress: resolvedFullAddress,
     };
 
-    // Fetch current weather from OpenWeatherMap
-    /*
-    const url = `https://api.openweathermap.org/data/2.5/weather?lat=${geoLat}&lon=${geoLon}&units=metric&appid=${apiKey}`;
-    */
-    const url = `/api/weather?action=weather&lat=${geoLat}&lon=${geoLon}`;
+    // Fetch current weather
+    const url = window.getWeatherEndpoint("weather", {
+      lat: geoLat,
+      lon: geoLon,
+    });
     const response = await fetch(url);
 
     if (!response.ok) {
@@ -982,7 +1010,7 @@ async function getWeather(
 
     try {
       const alertsRes = await fetch(
-        `/api/weather?action=alerts&lat=${lat}&lon=${lon}`,
+        window.getWeatherEndpoint("alerts", { lat: lat, lon: lon }),
       );
       if (alertsRes.ok) {
         const alertsData = await alertsRes.json();
@@ -1309,22 +1337,22 @@ async function getWeather(
       amIcon = isNight ? "clear-night" : "clear-day";
     }
 
-    const iconUrl = `assets/icons/${amIcon}.svg`;
-
-    // Applying the determined weather class to the main container to trigger CSS backgrounds/animations
+    const iconUrl = window.getCachedAsset ? window.getCachedAsset(`assets/icons/${amIcon}.svg`) : `assets/icons/${amIcon}.svg`;
     const weatherBox = document.querySelector(".weather-box");
-
     const isAnimDisabled = weatherBox.classList.contains("disable-animations");
     const isAbout = weatherBox.classList.contains("about-mode");
     weatherBox.className = `weather-box${isAnimDisabled ? " disable-animations" : ""}${isAbout ? " about-mode" : ""}`;
     document.body.className = "";
+
+    try {
+      localStorage.setItem("lastWeatherClass", weatherClass);
+    } catch(e) {}
 
     weatherClass.split(" ").forEach((cls) => {
       weatherBox.classList.add(cls);
       document.body.classList.add(cls);
     });
 
-    // Initialize lightning animations if the weather condition warrants it
     Object.values(lightningTimers).forEach(clearTimeout);
     lightningTimers = {};
     document
@@ -1440,7 +1468,6 @@ async function getWeather(
     const diffDays = (currentUnix - knownNewMoon) / 86400;
     let lunarCycles = diffDays / synodicMonth;
     let phasePercent = lunarCycles - Math.floor(lunarCycles);
-
     let moonAge = (phasePercent * synodicMonth).toFixed(1);
     let moonIllumination = Math.round(
       ((1 - Math.cos(phasePercent * 2 * Math.PI)) / 2) * 100,
@@ -1516,7 +1543,6 @@ async function getWeather(
       currentHourIndex = cityTime.getHours();
     }
 
-    // Pollen Data processing
     let grassPollen = 0,
       treePollen = 0,
       weedPollen = 0;
@@ -1640,7 +1666,6 @@ async function getWeather(
       smartAlerts.push("🌤️ A great day to go about your normal routine.");
     }
 
-    // Restore formatHour for UI usage
     const formatHour = (index) => {
       if (index === -1) return "";
       if (!uvData || !uvData.hourly || !uvData.hourly.time) return "";
@@ -1658,7 +1683,6 @@ async function getWeather(
       }
     };
 
-    // Build the SVG chart for Hourly Forecasts (Temperature and Precipitation)
     let hourlyTempHtml = "";
     let hourlyPrecipHtml = "";
     if (
@@ -1668,10 +1692,10 @@ async function getWeather(
       currentHourIndex !== -1
     ) {
       const numHours = 12;
-      const pointWidth = 40; // spacing between points
+      const pointWidth = 40;
       const chartWidth = numHours * pointWidth;
-      const chartHeight = 60; // top part for curve and temp
-      const totalHeight = 100; // 60 + icon (30) + label (10)
+      const chartHeight = 60;
+      const totalHeight = 100;
 
       let temps = [];
       let hoursData = [];
@@ -1723,7 +1747,6 @@ async function getWeather(
         let maxT = Math.max(...temps);
         let range = maxT - minT;
 
-        // Enforce a minimum temperature range to reduce vertical stretching
         if (range < 10) {
           let padding = (10 - range) / 2;
           minT -= padding;
@@ -1737,14 +1760,13 @@ async function getWeather(
         for (let j = 0; j < hoursData.length; j++) {
           let x = (j + 0.5) * pointWidth;
           let normalizedY = (hoursData[j].temp - minT) / range;
-          // Y goes from 24 (max temp) to 48 (min temp) for less vertical distance
           let y = 24 + (1 - normalizedY) * 24;
           points.push(`${x},${y}`);
 
           labelsHtml += `
                       <div style="position: absolute; left: ${x}px; top: 0; width: ${pointWidth}px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; pointer-events: none; height: ${totalHeight}px;">
                           <span style="position: absolute; top: ${y - 22}px; font-size: 0.65rem; font-weight: bold; color: inherit;">${hoursData[j].temp}°</span>
-                          <img src="assets/icons/${hoursData[j].icon}.svg" style="position: absolute; top: 55px; width: 28px; height: 28px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4));" alt="${hoursData[j].icon}" draggable="false">
+                          <img src="${window.getCachedAsset(`assets/icons/${hoursData[j].icon}.svg`)}" style="position: absolute; top: 55px; width: 28px; height: 28px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4));" alt="${hoursData[j].icon}" draggable="false">
                           <span style="position: absolute; top: 85px; font-size: 0.55rem; opacity: 0.8; white-space: nowrap; color: inherit;">${hoursData[j].timeStr}</span>
                       </div>
                   `;
@@ -1783,7 +1805,7 @@ async function getWeather(
           pLabelsHtml += `
                       <div style="position: absolute; left: ${x}px; top: 0; width: ${pointWidth}px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; pointer-events: none; height: ${totalHeight}px;">
                           <span style="position: absolute; top: ${y - 20}px; font-size: 0.6rem; font-weight: bold; color: inherit;">${precipPoints[j]}%</span>
-                          <img src="assets/icons/${hoursData[j].icon}.svg" style="position: absolute; top: 55px; width: 28px; height: 28px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4));" alt="${hoursData[j].icon}" draggable="false">
+                          <img src="${window.getCachedAsset(`assets/icons/${hoursData[j].icon}.svg`)}" style="position: absolute; top: 55px; width: 28px; height: 28px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4));" alt="${hoursData[j].icon}" draggable="false">
                           <span style="position: absolute; top: 85px; font-size: 0.55rem; opacity: 0.8; white-space: nowrap; color: inherit;">${hoursData[j].timeStr}</span>
                       </div>
                   `;
@@ -1801,7 +1823,6 @@ async function getWeather(
       }
     }
 
-    // Build the SVG chart for Daily Forecasts (Temperature ranges and Precipitation)
     let dailyTempHtml = "";
     let dailyPrecipHtml = "";
     if (uvData && uvData.daily && uvData.daily.time) {
@@ -1887,7 +1908,6 @@ async function getWeather(
         for (let j = 0; j < daysData.length; j++) {
           let x = (j + 0.5) * pointWidth;
           let normalizedY = (daysData[j].temp - minT) / range;
-          // Y goes from 24 (max temp) to 48 (min temp) for less vertical distance
           let y = 24 + (1 - normalizedY) * 24;
           points.push(`${x},${y}`);
 
@@ -1897,7 +1917,7 @@ async function getWeather(
                               <span style="font-size: 0.65rem; font-weight: bold; color: inherit;">${daysData[j].temp}°</span>
                               <span style="font-size: 0.45rem; opacity: 0.7; color: inherit;">/${daysData[j].minTemp}°</span>
                           </div>
-                          <img src="assets/icons/${daysData[j].icon}.svg" style="position: absolute; top: 55px; width: 28px; height: 28px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4));" alt="${daysData[j].icon}" draggable="false">
+                          <img src="${window.getCachedAsset(`assets/icons/${daysData[j].icon}.svg`)}" style="position: absolute; top: 55px; width: 28px; height: 28px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4));" alt="${daysData[j].icon}" draggable="false">
                           <span style="position: absolute; top: 85px; font-size: 0.55rem; opacity: 0.8; white-space: nowrap; color: inherit;">${daysData[j].timeStr}</span>
                       </div>
                   `;
@@ -1936,7 +1956,7 @@ async function getWeather(
           pLabelsHtml += `
                       <div style="position: absolute; left: ${x}px; top: 0; width: ${pointWidth}px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; pointer-events: none; height: ${totalHeight}px;">
                           <span style="position: absolute; top: ${y - 20}px; font-size: 0.6rem; font-weight: bold; color: inherit;">${dailyPrecipPoints[j]}%</span>
-                          <img src="assets/icons/${daysData[j].icon}.svg" style="position: absolute; top: 55px; width: 28px; height: 28px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4));" alt="${daysData[j].icon}" draggable="false">
+                          <img src="${window.getCachedAsset(`assets/icons/${daysData[j].icon}.svg`)}" style="position: absolute; top: 55px; width: 28px; height: 28px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4));" alt="${daysData[j].icon}" draggable="false">
                           <span style="position: absolute; top: 85px; font-size: 0.55rem; opacity: 0.8; white-space: nowrap; color: inherit;">${daysData[j].timeStr}</span>
                       </div>
                   `;
@@ -1988,7 +2008,7 @@ async function getWeather(
                 <span style="font-size: 0.75rem; color: inherit; font-weight: bold; display: flex; align-items: center; justify-content: flex-end; gap: 3px;">
                     <i class='bx ${arrowIcon}'></i> ${maxAbsDiff}%
                 </span>
-                <span style="font-size: 0.45rem; color: inherit; opacity: 0.7; margin-top: 2px;">in next ${bestHourOffset} hrs</span>
+                <span style="font-size: 0.45rem; color: inherit; opacity: 0.9; font-weight: bold; margin-top: 2px;">in next ${bestHourOffset} hrs</span>
             </div>
         `;
       } else {
@@ -1997,7 +2017,7 @@ async function getWeather(
                 <span style="font-size: 0.75rem; color: inherit; opacity: 0.7; font-weight: bold; display: flex; align-items: center; justify-content: flex-end; gap: 3px;">
                     <i class='bx bx-minus'></i> 0%
                 </span>
-                <span style="font-size: 0.45rem; color: inherit; opacity: 0.7; margin-top: 2px;">in next 3 hrs</span>
+                <span style="font-size: 0.45rem; color: inherit; opacity: 0.9; font-weight: bold; margin-top: 2px;">in next 3 hrs</span>
             </div>
         `;
       }
@@ -2042,7 +2062,7 @@ async function getWeather(
                 <span style="font-size: 0.75rem; color: inherit; font-weight: bold; display: flex; align-items: center; justify-content: flex-end;">
                     ${timeDisplay}
                 </span>
-                <span style="font-size: 0.45rem; color: inherit; opacity: 0.7; margin-top: 2px;">Peak uv time</span>
+                <span style="font-size: 0.45rem; color: inherit; opacity: 0.9; font-weight: bold; margin-top: 2px;">Peak uv time</span>
             </div>
         `;
       } else {
@@ -2058,7 +2078,7 @@ async function getWeather(
                 <span style="font-size: 0.75rem; color: inherit; font-weight: bold; display: flex; align-items: center; justify-content: flex-end;">
                     ${todayMaxUv}
                 </span>
-                <span style="font-size: 0.45rem; color: inherit; opacity: 0.7; margin-top: 2px;">Today's max</span>
+                <span style="font-size: 0.45rem; color: inherit; opacity: 0.9; font-weight: bold; margin-top: 2px;">Today's max</span>
             </div>
         `;
       }
@@ -2092,7 +2112,9 @@ async function getWeather(
       );
     }
 
-    // Inject the finalized HTML structure containing all processed data into the DOM
+    const homeResultNode = document.getElementById("home-result");
+    if (homeResultNode) homeResultNode.style.display = "none";
+    
     result.innerHTML = `
           <div class="weather-main-display">
               <div class="weather-info">
@@ -2116,7 +2138,7 @@ async function getWeather(
                   <div class="detail-tab-content">
                       <div class="detail-val-col">
                           <span class="tab-value" style="text-align: left; margin-left: -1px;">${precipStr} ${currentUnits.precip}</span>
-                          <span class="detail-sub-val" style="color: ${precipColor}; text-align: left;">${precipCondition}</span>
+                          <span class="detail-sub-val" style="color: ${precipColor}; text-align: left; margin-left: -1px;">${precipCondition}</span>
                       </div>
                       <div class="detail-extra-col">
                           <span class="tab-value" style="position: relative; top: -4px;">${precipProb}%</span>
@@ -2128,8 +2150,8 @@ async function getWeather(
                   <span class="tab-label detail-tab-label" style="margin-top: -3px; margin-left: -3px;"><i class='bx bx-wind' style="transform: translateY(1px); font-size: 0.8rem;"></i> Wind</span>
                   <div class="detail-tab-content">
                       <div class="detail-val-col small-margin">
-                          <span class="tab-value" style="text-align: left; margin-left: 10px;">${windStr} ${currentUnits.wind}</span>
-                          <span class="detail-sub-val" style="color: ${windColor}; text-align: left; margin-left: 10px;">${windLabel}</span>
+                          <span class="tab-value" style="text-align: left; margin-left: 7px;">${windStr} ${currentUnits.wind}</span>
+                          <span class="detail-sub-val" style="color: ${windColor}; text-align: left; margin-left: 7px;">${windLabel}</span>
                       </div>
                       <div class="wind-dir-col">
                           <span class="wind-dir-text">${windDir}</span>
@@ -2143,8 +2165,8 @@ async function getWeather(
                   <span class="tab-label detail-tab-label" style="margin-top: -2px; margin-left: -3px;"><i class='ti ti-droplet' style="transform: translateY(0px); font-size: 0.7rem;"></i> Humidity</span>
                   <div class="detail-tab-content">
                       <div class="detail-val-col">
-                          <span class="tab-value">${humidity}%</span>
-                          <span class="detail-sub-val" style="color: ${humidityColor};">${humidityLabel}</span>
+                          <span class="tab-value" style="text-align: left; margin-left: -6px;">${humidity}%</span>
+                          <span class="detail-sub-val" style="color: ${humidityColor}; text-align: left; margin-left: -6px;">${humidityLabel}</span>
                       </div>
                       ${humidityChangeHtml}
                   </div>
@@ -2153,8 +2175,8 @@ async function getWeather(
                   <span class="tab-label detail-tab-label" style="margin-top: -2px; margin-left: -3px;"><i class='ti ti-sun-high' style="transform: translateY(3px); font-size: 0.85rem;"></i> UV Index</span>
                   <div class="detail-tab-content">
                       <div class="detail-val-col">
-                          <span class="tab-value" style="text-align: center;">${uvIndex}</span>
-                          <span class="detail-sub-val" style="color: ${uvColor}; text-align: center;">${uvLabel}</span>
+                          <span class="tab-value" style="text-align: left; margin-left: -3px;">${uvIndex}</span>
+                          <span class="detail-sub-val" style="color: ${uvColor}; text-align: left; margin-left: -3px;">${uvLabel}</span>
                       </div>
                       ${peakUvHtml}
                   </div>
@@ -2162,29 +2184,29 @@ async function getWeather(
 
               <!-- Visibility, Pressure, Dew Point (Row of 3) -->
               <div class="glass-tab one-third detail-tab center">
-                  <span class="tab-label detail-tab-label" style="margin-top: -4px; margin-left: -30px;"><i class='ti ti-eye' style="transform: translateY(2px); font-size: 0.85rem;"></i> Visibility</span>
+                  <span class="tab-label detail-tab-label" style="margin-top: -4px; margin-left: -36px;"><i class='ti ti-eye' style="transform: translateY(2px); font-size: 0.85rem;"></i> Visibility</span>
                   <div class="detail-tab-content center">
                       <div class="detail-val-col no-margin">
-                          <span class="tab-value ellipsis-text">${visStr} ${currentUnits.vis}</span>
-                          <span class="detail-sub-val small ellipsis-text" style="color: ${visColor};">${visLabel}</span>
+                          <span class="tab-value ellipsis-text" style="text-align: left; margin-left: -2px;">${visStr} ${currentUnits.vis}</span>
+                          <span class="detail-sub-val small ellipsis-text" style="color: ${visColor}; text-align: left; margin-left: -1px;">${visLabel}</span>
                       </div>
                   </div>
               </div>
               <div class="glass-tab one-third detail-tab center">
-                  <span class="tab-label detail-tab-label" style="margin-top: -4px; margin-left: -30px;"><i class= 'ti ti-fold' style="transform: translateY(1px); font-size: 0.75rem;"></i> Pressure</span>
+                  <span class="tab-label detail-tab-label" style="margin-top: -4px; margin-left: -36px;"><i class= 'ti ti-fold' style="transform: translateY(1px); font-size: 0.75rem;"></i> Pressure</span>
                   <div class="detail-tab-content center">
                       <div class="detail-val-col no-margin">
-                          <span class="tab-value ellipsis-text">${pressStr} ${currentUnits.press}</span>
-                          <span class="detail-sub-val small ellipsis-text" style="color: ${pressColor};">${pressLabel}</span>
+                          <span class="tab-value ellipsis-text" style="text-align: left; margin-left: 2px;">${pressStr} ${currentUnits.press}</span>
+                          <span class="detail-sub-val small ellipsis-text" style="color: ${pressColor}; text-align: left; margin-left: 4px;">${pressLabel}</span>
                       </div>
                   </div>
               </div>
               <div class="glass-tab one-third detail-tab center">
-                  <span class="tab-label detail-tab-label" style="margin-top: -3px; margin-left: -24px;"><i class='bx bxs-droplet-half' style="transform: translateY(0.5px); font-size: 0.75rem;"></i> Dew Point</span>
+                  <span class="tab-label detail-tab-label" style="margin-top: -3px; margin-left: -30px;"><i class='bx bxs-droplet-half' style="transform: translateY(0.5px); font-size: 0.75rem;"></i> Dew Point</span>
                   <div class="detail-tab-content center">
                       <div class="detail-val-col no-margin">
-                          <span class="tab-value ellipsis-text">${displayDew}${dewUnitStr}</span>
-                          <span class="detail-sub-val small ellipsis-text" style="color: ${dewColor};">${dewLabel}</span>
+                          <span class="tab-value ellipsis-text" style="text-align: left; margin-left: -3px;">${displayDew}${dewUnitStr}</span>
+                          <span class="detail-sub-val small ellipsis-text" style="color: ${dewColor}; text-align: left; margin-left: -3px;">${dewLabel}</span>
                       </div>
                   </div>
               </div>
@@ -2263,24 +2285,24 @@ async function getWeather(
                   <span class="tab-label detail-tab-label no-margin" style="margin-top: -6px; margin-left: -3px;"><i class='bx bx-spa' style="transform: translateY(-1px); font-size: 0.85rem;"></i> Pollen</span>
                   <div class="pollutants-container">
                       <div class="pollutant-item" style="flex-direction: row; justify-content: center; gap: 8px;">
-                          <img src="assets/icons/grass-pollen.svg" style="width: 64px; height: 64px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4)); margin-top: -18px; margin-bottom: -15px; margin-left: -18px; margin-right: -12px;" alt="Grass">
+                          <img src="${window.getCachedAsset(`assets/icons/grass-pollen.svg`)}" style="width: 64px; height: 64px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4)); margin-top: -18px; margin-bottom: -15px; margin-left: -18px; margin-right: -12px;" alt="Grass">
                           <div style="display: flex; flex-direction: column; align-items: flex-start;">
                               <span class="pollutant-name" style="margin-bottom: 6px; margin-top: -12px; font-size: 0.7rem;">Grass</span>
                               <span class="pollutant-status" style="color: ${grassStatus.color}; text-align: left;">${grassStatus.label}</span>
                           </div>
                       </div>
                       <div class="pollutant-item" style="flex-direction: row; justify-content: center; gap: 8px;">
-                          <img src="assets/icons/tree-pollen.svg" style="width: 64px; height: 64px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4)); margin-top: -20px; margin-bottom: -15px; margin-left: -30px; margin-right: -12px;" alt="Tree">
+                          <img src="${window.getCachedAsset(`assets/icons/tree-pollen.svg`)}" style="width: 64px; height: 64px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4)); margin-top: -20px; margin-bottom: -15px; margin-left: -30px; margin-right: -12px;" alt="Tree">
                           <div style="display: flex; flex-direction: column; align-items: flex-start;">
                               <span class="pollutant-name" style="margin-bottom: 6px; margin-top: -1px; font-size: 0.7rem;">Tree</span>
-                              <span class="pollutant-status" style="color: ${treeStatus.color}; text-align: left; margin-bottom: 0;">${treeStatus.label}</span>
+                              <span class="pollutant-status" style="color: ${treeStatus.color}; text-align: left;">${treeStatus.label}</span>
                           </div>
                       </div>
                       <div class="pollutant-item" style="flex-direction: row; justify-content: center; gap: 8px;">
-                          <img src="assets/icons/weed-pollen.svg" style="width: 64px; height: 64px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4)); margin-top: -16px; margin-bottom: -15px; margin-left: -30px; margin-right: -12px;" alt="Weed">
+                          <img src="${window.getCachedAsset(`assets/icons/weed-pollen.svg`)}" style="width: 64px; height: 64px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4)); margin-top: -16px; margin-bottom: -15px; margin-left: -30px; margin-right: -12px;" alt="Weed">
                           <div style="display: flex; flex-direction: column; align-items: flex-start;">
                               <span class="pollutant-name" style="margin-bottom: 6px; margin-top: -4px; font-size: 0.7rem;">Weed</span>
-                              <span class="pollutant-status" style="color: ${weedStatus.color}; text-align: left; margin-bottom: 0;">${weedStatus.label}</span>
+                              <span class="pollutant-status" style="color: ${weedStatus.color}; text-align: left;">${weedStatus.label}</span>
                           </div>
                       </div>
                   </div>
@@ -2294,7 +2316,7 @@ async function getWeather(
                   <div style="display: flex; justify-content: space-between; align-items: center; margin-top: -3px; width: 100%;">
                       <!-- Sunrise -->
                       <div style="display: flex; flex-direction: column; align-items: center; flex: 1;">
-                          <img src="assets/icons/sun-rise.svg" style="width: 32px; height: 32px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));" alt="Sunrise">
+                          <img src="${window.getCachedAsset(`assets/icons/sun-rise.svg`)}" style="width: 32px; height: 32px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));" alt="Sunrise">
                           <span style="font-size: 0.5rem; font-weight: bold; opacity: 0.8; margin-top: -4px; margin-bottom: 1px;">Sunrise</span>
                           <span style="font-size: 0.45rem; font-weight: bold; white-space: nowrap;">${sunriseTime}</span>
                       </div>
@@ -2310,7 +2332,7 @@ async function getWeather(
                       
                       <!-- Sunset -->
                       <div style="display: flex; flex-direction: column; align-items: center; flex: 1;">
-                          <img src="assets/icons/sun-set.svg" style="width: 32px; height: 32px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4)); margin-top: 0px;" alt="Sunset">
+                          <img src="${window.getCachedAsset(`assets/icons/sun-set.svg`)}" style="width: 32px; height: 32px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4)); margin-top: 0px;" alt="Sunset">
                           <span style="font-size: 0.5rem; font-weight: bold; opacity: 0.8; margin-top: -4px; margin-bottom: 1px;">Sunset</span>
                           <span style="font-size: 0.45rem; font-weight: bold; white-space: nowrap;">${sunsetTime}</span>
                       </div>
@@ -2323,7 +2345,7 @@ async function getWeather(
                   </span>
                   <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 5px; width: 100%;">
                       <!-- Left: Moon Phase Icon -->
-                      <img src="assets/icons/${moonIconFile}" style="width: 42px; height: 42px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4)); margin-right: 6px;" alt="${moonPhase}">
+                      <img src="${window.getCachedAsset(`assets/icons/${moonIconFile}`)}" style="width: 42px; height: 42px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4)); margin-right: 6px;" alt="${moonPhase}">
                       
                       <!-- Details: Phase Name, Illumination, Age, Moonrise, Moonset -->
                       <div style="display: flex; flex-direction: column; flex: 1; min-width: 0;">
@@ -2331,17 +2353,17 @@ async function getWeather(
                           <div style="display: flex; justify-content: space-between; width: 100%;">
                               <!-- Middle: Illumination, Age -->
                               <div style="display: flex; flex-direction: column; align-items: flex-start;">
-                                  <span style="font-size: 0.35rem; opacity: 0.6; margin-top: 3px; margin-bottom: 1.5px;">Illum</span>
+                                  <span style="font-size: 0.35rem; opacity: 0.8; margin-top: 3px; margin-bottom: 1.5px;">Illum</span>
                                   <span style="font-size: 0.4rem; font-weight: bold;">${moonIllumination}%</span>
-                                  <span style="font-size: 0.35rem; opacity: 0.6; margin-top: 1.5px; margin-bottom: 1.5px;">Age</span>
+                                  <span style="font-size: 0.35rem; opacity: 0.8; margin-top: 1.5px; margin-bottom: 1.5px;">Age</span>
                                   <span style="font-size: 0.4rem; font-weight: bold;">${moonAge}d</span>
                               </div>
                               
                               <!-- Right: Moonrise and Moonset -->
                               <div style="display: flex; flex-direction: column; align-items: flex-start; margin-left: 5px;">
-                                  <span style="font-size: 0.35rem; opacity: 0.6; margin-top: 3px; margin-bottom: 1.5px;">Moonrise</span>
+                                  <span style="font-size: 0.35rem; opacity: 0.8; margin-top: 3px; margin-bottom: 1.5px;">Moonrise</span>
                                   <span style="font-size: 0.4rem; font-weight: bold; white-space: nowrap; overflow: hidden; max-width: 40px;">${moonriseTime}</span>
-                                  <span style="font-size: 0.35rem; opacity: 0.6; margin-top: 1.5px; margin-bottom: 1.5px;">Moonset</span>
+                                  <span style="font-size: 0.35rem; opacity: 0.8; margin-top: 1.5px; margin-bottom: 1.5px;">Moonset</span>
                                   <span style="font-size: 0.4rem; font-weight: bold; white-space: nowrap; overflow: hidden; max-width: 40px;">${moonsetTime}</span>
                               </div>
                           </div>
@@ -2393,7 +2415,6 @@ async function getWeather(
           </div>
       `;
 
-    // Restore tab states
     if (window.currentForecastTab) {
       switchForecastTab(window.currentForecastTab);
     }
@@ -2421,6 +2442,22 @@ async function getWeather(
     if (window.initSmartAlertsCycle) {
       window.initSmartAlertsCycle(smartAlerts);
     }
+    
+    try {
+      const currentHtml = document.getElementById("result").innerHTML;
+      sessionStorage.setItem("cachedWeatherHTML", currentHtml);
+      sessionStorage.setItem("cachedWeatherCity", city);
+    } catch(e) {}
+    
+    if (typeof window.pushAppState === "function") {
+      window.pushAppState("#weather/" + encodeURIComponent(city));
+    }
+
+    if (typeof fetchStartupCityWeather === "function") {
+      currentStartupCity = localStorage.getItem("lastCity");
+      fetchStartupCityWeather(true);
+    }
+
     if (weatherInterval) clearTimeout(weatherInterval);
     if (currentRefreshInterval > 0) {
       weatherInterval = setTimeout(
