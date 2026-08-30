@@ -15,15 +15,10 @@ let currentUnits = {
 };
 let timeInterval;
 
-async function fetchStartupCityWeather() {
-  document.body.className = "";
-  const weatherBox = document.querySelector(".weather-box");
-  if (weatherBox) {
-    const isAnimDisabled = weatherBox.classList.contains("disable-animations");
-    const isAbout = weatherBox.classList.contains("about-mode");
-    weatherBox.className = `weather-box${isAnimDisabled ? " disable-animations" : ""}${isAbout ? " about-mode" : ""}`;
-  }
+window.homeLastLoadedCity = null;
+window.preloadedHomeHTML = null;
 
+async function fetchStartupCityWeather(isPreload = false) {
   const majorCities = [
     "Hyderabad",
     "New Delhi",
@@ -60,16 +55,154 @@ async function fetchStartupCityWeather() {
     currentStartupCity ||
     majorCities[Math.floor(Math.random() * majorCities.length)];
   currentStartupCity = randomCity;
-  
+
+  if (!isPreload && window.homeLastLoadedCity === currentStartupCity && window.preloadedHomeHTML) {
+    document.body.className = "";
+    const weatherBox = document.querySelector(".weather-box");
+    if (weatherBox) {
+      const isAnimDisabled = weatherBox.classList.contains("disable-animations");
+      const isAbout = weatherBox.classList.contains("about-mode");
+      weatherBox.className = `weather-box${isAnimDisabled ? " disable-animations" : ""}${isAbout ? " about-mode" : ""}`;
+    }
+    let homeContainer = document.getElementById("home-result");
+    if (!homeContainer) {
+      homeContainer = document.createElement("div");
+      homeContainer.id = "home-result";
+      homeContainer.className = "result";
+      document.querySelector(".weather-box").appendChild(homeContainer);
+    }
+    homeContainer.innerHTML = window.preloadedHomeHTML;
+    document.getElementById("result").style.display = "none";
+    homeContainer.style.display = "block";
+    return;
+  }
+
+  if (!isPreload) {
+    document.body.className = "";
+    const weatherBox = document.querySelector(".weather-box");
+    if (weatherBox) {
+      const isAnimDisabled = weatherBox.classList.contains("disable-animations");
+      const isAbout = weatherBox.classList.contains("about-mode");
+      weatherBox.className = `weather-box${isAnimDisabled ? " disable-animations" : ""}${isAbout ? " about-mode" : ""}`;
+    }
+
+    let homeContainer = document.getElementById("home-result");
+    if (!homeContainer) {
+      homeContainer = document.createElement("div");
+      homeContainer.id = "home-result";
+      homeContainer.className = "result";
+      document.querySelector(".weather-box").appendChild(homeContainer);
+    }
+    
+    homeContainer.innerHTML = `
+      <style>
+        @keyframes shimmer-sweep {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
+        .shimmer-bg {
+          background: linear-gradient(90deg, rgba(255,255,255,0.15) 25%, rgba(255,255,255,0.35) 50%, rgba(255,255,255,0.15) 75%);
+          background-size: 200% 100%;
+          animation: shimmer-sweep 1.5s infinite linear;
+        }
+        .shimmer-text {
+          color: transparent !important;
+          background: linear-gradient(90deg, rgba(255,255,255,0.2) 25%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0.2) 75%);
+          background-size: 200% 100%;
+          animation: shimmer-sweep 1.5s infinite linear;
+          background-clip: text;
+          -webkit-background-clip: text;
+          display: inline-block;
+        }
+        .disable-animations .shimmer-bg, .disable-animations .shimmer-text {
+          animation: none !important;
+        }
+        .disable-animations .shimmer-text {
+          background: rgba(255,255,255,0.4) !important;
+          background-clip: text;
+          -webkit-background-clip: text;
+        }
+      </style>
+      <div class="weather-main-display" style="opacity: 0.9; pointer-events: none; margin-top: 20px;">
+          <div class="weather-info" style="width: 100%;">
+              <div><div class="shimmer-bg" style="width: 160px; height: 1.6rem; border-radius: 8px; margin-bottom: 4px;"></div></div>
+              <div><div class="shimmer-bg" style="width: 120px; height: 1rem; border-radius: 4px; margin-bottom: 6px;"></div></div>
+              <div><div class="shimmer-bg" style="width: 90px; height: 3.5rem; border-radius: 12px; margin-bottom: 0px;"></div></div>
+              <div><div class="shimmer-bg" style="width: 100px; height: 0.7rem; border-radius: 4px; margin-bottom: 15px; margin-top: 5px;"></div></div>
+              
+              <div style="display: flex; flex-direction: row; gap: 10px; align-items: center; margin-top: 10px; width: 100%; justify-content: space-around;">
+                  <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1 1 0;">
+                      <div class="shimmer-bg" style="width: 50px; height: 25px; border-radius: 6px;"></div>
+                  </div>
+                  <div style="width: 0.5px; min-width: 0.5px; height: 25px; background: rgba(255, 255, 255, 0.4); flex-shrink: 0;"></div>
+                  <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1 1 0;">
+                      <div class="shimmer-bg" style="width: 50px; height: 25px; border-radius: 6px;"></div>
+                  </div>
+                  <div style="width: 0.5px; min-width: 0.5px; height: 25px; background: rgba(255, 255, 255, 0.4); flex-shrink: 0;"></div>
+                  <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1 1 0;">
+                      <div class="shimmer-bg" style="width: 50px; height: 25px; border-radius: 6px;"></div>
+                  </div>
+                  <div style="width: 0.5px; min-width: 0.5px; height: 25px; background: rgba(255, 255, 255, 0.4); flex-shrink: 0;"></div>
+                  <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1 1 0;">
+                      <div class="shimmer-bg" style="width: 50px; height: 25px; border-radius: 6px;"></div>
+                  </div>
+              </div>
+          </div>
+      </div>
+      <div class="startup-details-grid" style="gap: 4px; flex-direction: column; opacity: 0.8; pointer-events: none; margin-top: 15px;">
+          <div style="display: flex; flex-direction: row; gap: 4px; width: 100%;">
+              <div class="startup-glass-tab shimmer-bg" style="flex: 1.45; height: 85px; border-radius: 12px;"></div>
+              <div style="display: flex; flex-direction: row; flex: 1; align-items: stretch; gap: 4px;">
+                  <div class="startup-glass-tab shimmer-bg" style="flex: 1; height: 85px; border-radius: 12px;"></div>
+                  <div class="startup-glass-tab shimmer-bg" style="flex: 1.2; height: 85px; border-radius: 12px;"></div>
+              </div>
+          </div>
+          <div style="display: flex; flex-direction: row; gap: 4px; width: 100%;">
+              <div style="flex: 1.6; display: flex; flex-direction: column; gap: 4px;">
+                  <div class="startup-glass-tab shimmer-bg" style="width: 100%; height: 70px; border-radius: 12px;"></div>
+                  <div class="startup-glass-tab shimmer-bg" style="width: 100%; height: 70px; border-radius: 12px;"></div>
+              </div>
+              <div class="startup-glass-tab shimmer-bg" style="flex: 1; min-height: 144px; border-radius: 12px;"></div>
+          </div>
+          <div style="display: flex; flex-direction: row; gap: 4px; width: 100%;">
+              <div class="startup-glass-tab shimmer-bg" style="flex: 0.9; height: 40px; border-radius: 12px;"></div>
+              <div class="startup-glass-tab shimmer-bg" style="flex: 0.9; height: 40px; border-radius: 12px;"></div>
+              <div class="startup-glass-tab shimmer-bg" style="flex: 1.05; height: 40px; border-radius: 12px;"></div>
+              <div class="startup-glass-tab shimmer-bg" style="flex: 1.15; height: 40px; border-radius: 12px;"></div>
+          </div>
+          <div class="startup-glass-tab shimmer-bg" style="width: 100%; height: 80px; border-radius: 12px;"></div>
+          <div style="display: flex; flex-direction: row; gap: 4px; width: 100%;">
+              <div class="startup-glass-tab shimmer-bg" style="flex: 1; height: 35px; border-radius: 12px;"></div>
+              <div class="startup-glass-tab shimmer-bg" style="flex: 1; height: 35px; border-radius: 12px;"></div>
+              <div class="startup-glass-tab shimmer-bg" style="flex: 1; height: 35px; border-radius: 12px;"></div>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; margin-top: 10px; margin-bottom: 5px; gap: 8px;">
+              <div class="shimmer-bg" style="width: 250px; height: 10px; border-radius: 4px;"></div>
+              <div class="shimmer-bg" style="width: 150px; height: 10px; border-radius: 4px;"></div>
+          </div>
+      </div>
+    `;
+    
+    const mainResult = document.getElementById("result");
+    if (mainResult) mainResult.style.display = "none";
+    homeContainer.style.display = "block";
+  }
+
   try {
     let response;
     const lastCity = localStorage.getItem("lastCity");
     const lastLat = localStorage.getItem("lastLat");
     const lastLon = localStorage.getItem("lastLon");
     if (currentStartupCity === lastCity && lastLat && lastLon) {
-      response = await fetch(`/api/weather?action=weather&lat=${lastLat}&lon=${lastLon}`);
+      response = await fetch(
+        window.getWeatherEndpoint("weather", { lat: lastLat, lon: lastLon }),
+      );
     } else {
-      response = await fetch(`/api/weather?action=weather&q=${encodeURIComponent(randomCity)}`);
+      response = await fetch(
+        window.getWeatherEndpoint("weather", {
+          q: encodeURIComponent(randomCity),
+        }),
+      );
     }
     if (!response.ok) return;
     const data = await response.json();
@@ -136,7 +269,6 @@ async function fetchStartupCityWeather() {
 
         let startIndex = fData.hourly.time.indexOf(locTimeStr);
         if (startIndex === -1) startIndex = cityTime.getHours();
-
         precipProb = fData.hourly.precipitation_probability[startIndex] || 0;
 
         let tabsHtml = "";
@@ -190,7 +322,7 @@ async function fetchStartupCityWeather() {
           tabsHtml += `
                             <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; min-width: 0;">
                                 <span style="font-size: 0.5rem; margin-bottom: -1px; font-family: 'LocalMerriweatherSans', 'Merriweather Sans', sans-serif; color: #F9FAFB">${displayTime}</span>
-                                <img src="assets/icons/${hIcon}.svg" style="width: 36px; height: 36px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4)); margin-bottom: -1px;" alt="${hIcon}">
+                                <img src="${window.getCachedAsset(`assets/icons/${hIcon}.svg`)}" style="width: 36px; height: 36px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4)); margin-bottom: -1px;" alt="${hIcon}">
                                 <span style="font-size: 0.6rem; font-weight: 400; font-family: 'LocalMerriweatherSans', 'Merriweather Sans', sans-serif; color: #F9FAFB; margin-bottom: -3px;">${fTemp}°</span>
                             </div>
                         `;
@@ -290,20 +422,23 @@ async function fetchStartupCityWeather() {
 
         let currentUnix = Math.floor(Date.now() / 1000);
         let sunsetUnix = data.sys?.sunset || currentUnix;
-        let sunriseUnix = data.sys?.sunrise || (currentUnix + 86400);
-        if (sunriseUnix < sunsetUnix) sunriseUnix += 86400; // Next day's sunrise
+        let sunriseUnix = data.sys?.sunrise || currentUnix + 86400;
+        if (sunriseUnix < sunsetUnix) sunriseUnix += 86400;
 
         let bestViewingStart = sunsetUnix + 90 * 60;
         let bestViewingEnd = sunriseUnix - 90 * 60;
-        let viewingHours = Math.max(1, Math.floor((bestViewingEnd - bestViewingStart) / 3600));
+        let viewingHours = Math.max(
+          1,
+          Math.floor((bestViewingEnd - bestViewingStart) / 3600),
+        );
 
         const getLocalTimeStr = (unix) => {
-            const date = new Date(unix * 1000);
-            const utc = date.getTime() + date.getTimezoneOffset() * 60000;
-            const local = new Date(utc + 1000 * data.timezone);
-            return `${local.getFullYear()}-${String(local.getMonth() + 1).padStart(2, "0")}-${String(local.getDate()).padStart(2, "0")}T${String(local.getHours()).padStart(2, "0")}:00`;
+          const date = new Date(unix * 1000);
+          const utc = date.getTime() + date.getTimezoneOffset() * 60000;
+          const local = new Date(utc + 1000 * data.timezone);
+          return `${local.getFullYear()}-${String(local.getMonth() + 1).padStart(2, "0")}-${String(local.getDate()).padStart(2, "0")}T${String(local.getHours()).padStart(2, "0")}:00`;
         };
-        
+
         let locTimeStartStr = getLocalTimeStr(bestViewingStart);
 
         try {
@@ -313,20 +448,21 @@ async function fetchStartupCityWeather() {
           if (aqResponse.ok) {
             const aqData = await aqResponse.json();
             aqi = aqData.current?.us_aqi || 0;
-            
+
             let startAqIndex = aqData.hourly?.time?.indexOf(locTimeStartStr);
             if (startAqIndex !== -1 && startAqIndex !== undefined) {
-               let sumAqi = 0, countAqi = 0;
-               for(let i = 0; i < viewingHours; i++) {
-                   let idx = startAqIndex + i;
-                   if (idx < (aqData.hourly?.us_aqi?.length || 0)) {
-                       sumAqi += aqData.hourly.us_aqi[idx] || 0;
-                       countAqi++;
-                   }
-               }
-               avgAqi = countAqi > 0 ? sumAqi / countAqi : aqi;
+              let sumAqi = 0,
+                countAqi = 0;
+              for (let i = 0; i < viewingHours; i++) {
+                let idx = startAqIndex + i;
+                if (idx < (aqData.hourly?.us_aqi?.length || 0)) {
+                  sumAqi += aqData.hourly.us_aqi[idx] || 0;
+                  countAqi++;
+                }
+              }
+              avgAqi = countAqi > 0 ? sumAqi / countAqi : aqi;
             } else {
-               avgAqi = aqi;
+              avgAqi = aqi;
             }
 
             if (aqi > 50 && aqi <= 100) aqiColor = "#ffff00";
@@ -348,15 +484,36 @@ async function fetchStartupCityWeather() {
             let alder = aqData.hourly?.alder_pollen?.[aqHourIndex] || 0;
             let birch = aqData.hourly?.birch_pollen?.[aqHourIndex] || 0;
             let weed = aqData.hourly?.ragweed_pollen?.[aqHourIndex] || 0;
-            
+
             const getSubIndex = (val, thresholds) => {
               if (val === 0) return 0;
-              if (val < thresholds[0]) return 0.1 + (val / thresholds[0]) * 2.8; // maps to ~0.1-2.9
-              if (val < thresholds[1]) return 3.0 + ((val - thresholds[0]) / (thresholds[1] - thresholds[0])) * 1.9; // maps to 3.0-4.9
-              if (val < thresholds[2]) return 5.0 + ((val - thresholds[1]) / (thresholds[2] - thresholds[1])) * 1.9; // maps to 5.0-6.9
-              if (val < thresholds[3]) return 7.0 + ((val - thresholds[2]) / (thresholds[3] - thresholds[2])) * 1.9; // maps to 7.0-8.9
-              if (val < thresholds[3] * 1.5) return 9.0 + ((val - thresholds[3]) / (thresholds[3] * 0.5)) * 1.9; // maps to 9.0-10.9
-              return Math.min(12.0, 11.0 + ((val - thresholds[3] * 1.5) / (thresholds[3] * 0.5)));
+              if (val < thresholds[0]) return 0.1 + (val / thresholds[0]) * 2.8;
+              if (val < thresholds[1])
+                return (
+                  3.0 +
+                  ((val - thresholds[0]) / (thresholds[1] - thresholds[0])) *
+                    1.9
+                );
+              if (val < thresholds[2])
+                return (
+                  5.0 +
+                  ((val - thresholds[1]) / (thresholds[2] - thresholds[1])) *
+                    1.9
+                );
+              if (val < thresholds[3])
+                return (
+                  7.0 +
+                  ((val - thresholds[2]) / (thresholds[3] - thresholds[2])) *
+                    1.9
+                );
+              if (val < thresholds[3] * 1.5)
+                return (
+                  9.0 + ((val - thresholds[3]) / (thresholds[3] * 0.5)) * 1.9
+                );
+              return Math.min(
+                12.0,
+                11.0 + (val - thresholds[3] * 1.5) / (thresholds[3] * 0.5),
+              );
             };
 
             let grassIndex = getSubIndex(grass, [5, 20, 80, 200]);
@@ -396,21 +553,23 @@ async function fetchStartupCityWeather() {
         let startForecastIndex = fData.hourly?.time?.indexOf(locTimeStartStr);
         let avgClouds = clouds;
         let avgVis_km = visibilityVal / 1000;
-        
+
         if (startForecastIndex !== -1 && startForecastIndex !== undefined) {
-            let sumC = 0, sumV = 0, countF = 0;
-            for(let i = 0; i < viewingHours; i++) {
-                let idx = startForecastIndex + i;
-                if (idx < (fData.hourly?.time?.length || 0)) {
-                    sumC += fData.hourly.cloudcover?.[idx] || 0;
-                    sumV += (fData.hourly.visibility?.[idx] || 10000) / 1000;
-                    countF++;
-                }
+          let sumC = 0,
+            sumV = 0,
+            countF = 0;
+          for (let i = 0; i < viewingHours; i++) {
+            let idx = startForecastIndex + i;
+            if (idx < (fData.hourly?.time?.length || 0)) {
+              sumC += fData.hourly.cloudcover?.[idx] || 0;
+              sumV += (fData.hourly.visibility?.[idx] || 10000) / 1000;
+              countF++;
             }
-            if (countF > 0) {
-                avgClouds = sumC / countF;
-                avgVis_km = sumV / countF;
-            }
+          }
+          if (countF > 0) {
+            avgClouds = sumC / countF;
+            avgVis_km = sumV / countF;
+          }
         }
 
         let starsIndex = 10;
@@ -493,7 +652,7 @@ async function fetchStartupCityWeather() {
                                     </div>
                                 </div>
                                 <div style="display: flex; flex-direction: row; align-items: center; justify-content: center; flex: 1.2; padding: 5px; margin-left: -20px;">
-                                    <img src="assets/icons/pollen_interface.svg" style="width: 24px; height: 24px; transform: scaleY(1.8); margin-right: 4px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4));" alt="Pollen">
+                                    <img src="${window.getCachedAsset(`assets/icons/pollen_interface.svg`)}" style="width: 24px; height: 24px; transform: scaleY(1.8); margin-right: 4px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4));" alt="Pollen">
                                     <div style="display: flex; flex-direction: column; justify-content: center;">
                                         <span style="font-size: 0.65rem; font-weight: bold; margin-top: -1px; margin-bottom: 3px; font-family: 'LocalMerriweatherSans', 'Merriweather Sans', sans-serif;">Pollen</span>
                                         <span style="font-size: 0.6rem; font-weight: bold; font-family: 'LocalMerriweatherSans', 'Merriweather Sans', sans-serif; max-width: 20px; margin-bottom: 3px; color: ${pollenColor};">${pollenLabel}</span>
@@ -507,22 +666,22 @@ async function fetchStartupCityWeather() {
                                     <div style="display: flex;">
                         <div class="startup-glass-tab" style="flex-direction: row; justify-content: space-around; width: 100%; padding: 10px 5px; box-sizing: border-box; flex: 1;">
                             <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; margin-top: 3px;">
-                                <img src="assets/icons/umbrella.svg" style="width: 28px; height: 28px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4)); margin-top: -4px; margin-bottom: 2px;" alt="Umbrella">
+                                <img src="${window.getCachedAsset(`assets/icons/umbrella.svg`)}" style="width: 28px; height: 28px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4)); margin-top: -4px; margin-bottom: 2px;" alt="Umbrella">
                                 <span style="font-size: 0.45rem; color: #F9FAFB; font-weight: bold; font-family: 'LocalComicSans', 'Comic Sans MS', 'Comic Sans', cursive; margin-bottom: 2px;">Umbrella</span>
                                 <span style="font-size: 0.4rem; color: #F9FAFB; font-family: 'LocalMerriweatherSans', 'Merriweather Sans', sans-serif; text-align: center;">${umbrellaAdvice}</span>
                             </div>
                             <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; margin-top: 3px;">
-                                <img src="assets/icons/cloths.svg" style="width: 28px; height: 28px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4)); margin-top: -4px; margin-bottom: 2px;" alt="Clothing">
+                                <img src="${window.getCachedAsset(`assets/icons/cloths.svg`)}" style="width: 28px; height: 28px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4)); margin-top: -4px; margin-bottom: 2px;" alt="Clothing">
                                 <span style="font-size: 0.45rem; color: #F9FAFB; font-weight: bold; font-family: 'LocalComicSans', 'Comic Sans MS', 'Comic Sans', cursive; margin-bottom: 2px;">Clothing</span>
                                 <span style="font-size: 0.4rem; color: #F9FAFB; font-family: 'LocalMerriweatherSans', 'Merriweather Sans', sans-serif; text-align: center;">${clothingAdvice}</span>
                             </div>
                             <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; margin-top: 3px;">
-                                <img src="assets/icons/outdoor.svg" style="width: 28px; height: 28px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4)); margin-top: -4px; margin-bottom: 2px;" alt="Outdoor">
+                                <img src="${window.getCachedAsset(`assets/icons/outdoor.svg`)}" style="width: 28px; height: 28px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4)); margin-top: -4px; margin-bottom: 2px;" alt="Outdoor">
                                 <span style="font-size: 0.45rem; color: #F9FAFB; font-weight: bold; font-family: 'LocalComicSans', 'Comic Sans MS', 'Comic Sans', cursive; margin-bottom: 2px;">Outdoor</span>
                                 <span style="font-size: 0.4rem; color: #F9FAFB; font-family: 'LocalMerriweatherSans', 'Merriweather Sans', sans-serif; text-align: center;">${outdoorAdvice}</span>
                             </div>
                             <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; margin-top: 3px;">
-                                <img src="assets/icons/driving.svg" style="width: 28px; height: 28px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4)); margin-top: -4px; margin-bottom: 2px;" alt="Driving">
+                                <img src="${window.getCachedAsset(`assets/icons/driving.svg`)}" style="width: 28px; height: 28px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4)); margin-top: -4px; margin-bottom: 2px;" alt="Driving">
                                 <span style="font-size: 0.45rem; color: #F9FAFB; font-weight: bold; font-family: 'LocalComicSans', 'Comic Sans MS', 'Comic Sans', cursive; margin-bottom: 2px;">Driving</span>
                                 <span style="font-size: 0.4rem; color: #F9FAFB; font-family: 'LocalMerriweatherSans', 'Merriweather Sans', sans-serif; text-align: center;">${drivingAdvice}</span>
                             </div>
@@ -531,7 +690,7 @@ async function fetchStartupCityWeather() {
                                     <div class="startup-glass-tab" style="flex-direction: column; width: 100%; padding: 15px; box-sizing: border-box; flex: 1;">
                                         <span style="font-size: 0.6rem; font-weight: bold; margin-top: -11px; margin-left: -10px; margin-bottom: 4px; color: #F9FAFB; text-align: left; display: flex; align-items: center; gap: 4px;"><i class='bx bx-news'></i> Weather News</span>
                                         <div style="display: flex; align-items: center; gap: 8px;">
-                                            <img src="assets/images/weather_news.webp" alt="News" style="width: 90px; height: 48px; border-radius: 6px; margin-left: -10px; margin-bottom:-10px; object-fit: cover;">
+                                            <img src="${window.getCachedAsset(`assets/images/weather_news.webp`)}" alt="News" style="width: 90px; height: 48px; border-radius: 6px; margin-left: -10px; margin-bottom:-10px; object-fit: cover;">
                                             <span style="font-size: 0.6rem; margin-left: 15px; opacity: 0.5; font-weight: 500; font-family: 'LocalMerriweatherSans', 'Merriweather Sans', sans-serif;">Update Soon...!</span>
                                         </div>
                                     </div>
@@ -550,21 +709,21 @@ async function fetchStartupCityWeather() {
                             </div>
                             <div style="display: flex; flex-direction: row; gap: 4px; width: 100%;">
                                 <div class="startup-glass-tab" style="flex: 0.9; padding: 5px 4px; display: flex; align-items: center; justify-content: left; gap: 4px; box-sizing: border-box;">
-                                        <img src="assets/icons/cloud_percentage.svg" style="width: 24px; height: 24px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4));" alt="Clouds">
+                                        <img src="${window.getCachedAsset(`assets/icons/cloud_percentage.svg`)}" style="width: 24px; height: 24px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4));" alt="Clouds">
                                         <div style="display: flex; flex-direction: column; gap: 2px; align-items: center; margin-left: 4px;">
                                             <span style="font-size: 0.55rem; color: #F9FAFB; font-weight: bold; font-family: 'LocalComicSans', 'Comic Sans MS', 'Comic Sans', cursive;">Clouds</span>
                                             <span style="font-size: 0.65rem; font-weight: bold; color: #F9FAFB; font-family: 'LocalMerriweatherSans', 'Merriweather Sans', sans-serif;">${clouds}%</span>
                                         </div>
                                 </div>
                                 <div class="startup-glass-tab" style="flex: 0.9; padding: 5px 4px; display: flex; align-items: center; justify-content: left; gap: 4px; box-sizing: border-box;">
-                                        <img src="assets/icons/wind_direction.svg" style="width: 24px; height: 24px; margin-left: 1px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4)); transform: rotate(${windDeg}deg);" alt="Wind Direction">
+                                        <img src="${window.getCachedAsset(`assets/icons/wind_direction.svg`)}" style="width: 24px; height: 24px; margin-left: 1px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4)); transform: rotate(${windDeg}deg);" alt="Wind Direction">
                                         <div style="display: flex; flex-direction: column; gap: 2px; align-items: center; margin-left: 4px;">
                                             <span style="font-size: 0.55rem; color: #F9FAFB; font-weight: bold; font-family: 'LocalComicSans', 'Comic Sans MS', 'Comic Sans', cursive;">Wind</span>
                                             <span style="font-size: 0.65rem; font-weight: bold; color: #F9FAFB; font-family: 'LocalMerriweatherSans', 'Merriweather Sans', sans-serif;">${windDir}</span>
                                         </div>
                                 </div>
                                 <div class="startup-glass-tab" style="flex: 1.05; padding: 5px 2px; display: flex; align-items: center; justify-content: left; gap: 4px; box-sizing: border-box;">
-                                    <img src="assets/icons/sun_riseset.svg" style="width: 24px; height: 24px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4));" alt="Sun">
+                                    <img src="${window.getCachedAsset(`assets/icons/sun_riseset.svg`)}" style="width: 24px; height: 24px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4));" alt="Sun">
                                     <div style="display: flex; flex-direction: column; gap: 2px; flex: 1; padding-right: 4px;">
                                         <div style="display: flex; align-items: center; gap: 2px;">
                                             <i class="ti ti-arrow-big-up-lines" style="font-size: 0.6rem; color: #F9FAFB; opacity: 0.9;"></i>
@@ -577,7 +736,7 @@ async function fetchStartupCityWeather() {
                                     </div>
                                 </div>
                                 <div class="startup-glass-tab" style="flex: 1.15; padding: 5px 4px; display: flex; align-items: center; justify-content: left; gap: 4px; box-sizing: border-box;">
-                                    <img src="assets/icons/stargazing.svg" style="width: 24px; height: 24px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4));" alt="Star View">
+                                    <img src="${window.getCachedAsset(`assets/icons/stargazing.svg`)}" style="width: 24px; height: 24px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4));" alt="Star View">
                                     <div style="display: flex; flex-direction: column; gap: 2px; align-items: left;">
                                         <span style="font-size: 0.55rem; color: #F9FAFB; font-weight: bold; font-family: 'LocalComicSans', 'Comic Sans MS', 'Comic Sans', cursive; white-space: nowrap;">Star View</span>
                                         <span style="font-size: 0.55rem; font-weight: bold; color: #F9FAFB; font-family: 'LocalMerriweatherSans', 'Merriweather Sans', sans-serif;">${starsLabel}</span>
@@ -593,30 +752,30 @@ async function fetchStartupCityWeather() {
                                 </div>
                                 <div style="flex: 2.2; display: flex; flex-direction: row; justify-content: space-around; align-items: stretch; gap: 4px; z-index: 2;">
                                     <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: top; text-align: center;">
-                                        <img src="assets/icons/accurate_aboutus.svg" style="width: 20px; height: 20px; margin-top: 2px;" alt="Accurate">
+                                        <img src="${window.getCachedAsset(`assets/icons/accurate_aboutus.svg`)}" style="width: 20px; height: 20px; margin-top: 2px;" alt="Accurate">
                                         <span style="font-size: 0.55rem; font-weight: bold; color: #F9FAFB; font-family: 'LocalComicSans', 'Comic Sans MS', 'Comic Sans', cursive;">Accurate</span>
                                         <span style="font-size: 0.38rem; opacity: 0.7; margin-top: 2px; line-height: 1.1; color: #F9FAFB; font-family: 'LocalMerriweatherSans', 'Merriweather Sans', sans-serif;">We use trusted global sources to deliver live and accurate weather data</span>
                                     </div>
                                     <div style="width: 1px; height: 35px; background: rgba(255,255,255,0.2); margin: auto 0;"></div>
                                     <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: top; text-align: center;">
-                                        <img src="assets/icons/beautiful_aboutus.svg" style="width: 20px; height: 20px; margin-bottom: 2px;" alt="Beautiful">
+                                        <img src="${window.getCachedAsset(`assets/icons/beautiful_aboutus.svg`)}" style="width: 20px; height: 20px; margin-bottom: 2px;" alt="Beautiful">
                                         <span style="font-size: 0.55rem; font-weight: bold; color: #F9FAFB; font-family: 'LocalComicSans', 'Comic Sans MS', 'Comic Sans', cursive;">Compact</span>
                                         <span style="font-size: 0.38rem; opacity: 0.7; margin-top: 2px; line-height: 1.1; color: #F9FAFB; font-family: 'LocalMerriweatherSans', 'Merriweather Sans', sans-serif;">Crafted for a smooth and delightful weather experience</span>
                                     </div>
                                     <div style="width: 1px; height: 35px; background: rgba(255,255,255,0.2); margin: auto 0;"></div>
                                     <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: top; text-align: center;">
-                                        <img src="assets/icons/privacy_aboutus.svg" style="width: 20px; height: 20px; margin-bottom: 2px;" alt="Private">
+                                        <img src="${window.getCachedAsset(`assets/icons/privacy_aboutus.svg`)}" style="width: 20px; height: 20px; margin-bottom: 2px;" alt="Private">
                                         <span style="font-size: 0.55rem; font-weight: bold; color: #F9FAFB; font-family: 'LocalComicSans', 'Comic Sans MS', 'Comic Sans', cursive;">Privacy</span>
                                         <span style="font-size: 0.38rem; opacity: 0.7; margin-top: 2px; line-height: 1.1; color: #F9FAFB; font-family: 'LocalMerriweatherSans', 'Merriweather Sans', sans-serif;">We respect your privacy, never collect personal information</span>
                                     </div>
                                 </div>
                                 <div style="flex: 0.8; display: flex; align-items: center; justify-content: center; z-index: 2;"></div>
-                                <img src="assets/images/connect_us.webp" alt="Connect Us" style="position: absolute; right: 0; top: 0; bottom: 0; height: 100%; width: 110px; object-fit: cover; z-index: 1; -webkit-mask-image: linear-gradient(to right, transparent 0%, black 50%); mask-image: linear-gradient(to right, transparent 0%, black 50%); opacity: 0.9;">
+                                <img src="${window.getCachedAsset(`assets/images/connect_us.webp`)}" alt="Connect Us" style="position: absolute; right: 0; top: 0; bottom: 0; height: 100%; width: 110px; object-fit: cover; z-index: 1; -webkit-mask-image: linear-gradient(to right, transparent 0%, black 50%); mask-image: linear-gradient(to right, transparent 0%, black 50%); opacity: 0.9;">
                             </div>
                             <div style="display: flex; flex-direction: row; gap: 4px; width: 100%;">
                                 <div class="startup-glass-tab" style="flex: 1; padding: 6px 4px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; box-sizing: border-box;" onclick="window.open('https://github.com/mnvdprasad/Weather-Box', '_blank')">
                                     <div style="display: flex; align-items: center; gap: 4px; min-width: 0;">
-                                        <img src="assets/icons/github.svg" style="width: 1.2rem; height: 1.2rem;" alt="Github">
+                                        <img src="${window.getCachedAsset(`assets/icons/github.svg`)}" style="width: 1.2rem; height: 1.2rem;" alt="Github">
                                         <div style="display: flex; flex-direction: column; min-width: 0;">
                                             <span style="font-size: 0.55rem; font-weight: bold; color: #F9FAFB; font-family: 'LocalComicSans', 'Comic Sans MS', 'Comic Sans', cursive; white-space: nowrap;">Github</span>
                                             <span style="font-size: 0.4rem; opacity: 0.8; color: #F9FAFB; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'LocalMerriweatherSans', 'Merriweather Sans', sans-serif;">Explore the source</span>
@@ -626,7 +785,7 @@ async function fetchStartupCityWeather() {
                                 </div>
                                 <div class="startup-glass-tab" style="flex: 1; padding: 6px 4px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; box-sizing: border-box;" onclick="window.open('https://github.com/mnvdprasad/Weather-Box/discussions', '_blank')">
                                     <div style="display: flex; align-items: center; gap: 4px; min-width: 0;">
-                                        <img src="assets/icons/feedback.svg" style="width: 1rem; height: 1rem;" alt="Feedback">
+                                        <img src="${window.getCachedAsset(`assets/icons/feedback.svg`)}" style="width: 1rem; height: 1rem;" alt="Feedback">
                                         <div style="display: flex; flex-direction: column; min-width: 0;">
                                             <span style="font-size: 0.55rem; font-weight: bold; color: #F9FAFB; font-family: 'LocalComicSans', 'Comic Sans MS', 'Comic Sans', cursive; white-space: nowrap;">Feedback</span>
                                             <span style="font-size: 0.4rem; opacity: 0.8; color: #F9FAFB; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'LocalMerriweatherSans', 'Merriweather Sans', sans-serif;">Help us improve</span>
@@ -636,7 +795,7 @@ async function fetchStartupCityWeather() {
                                 </div>
                                 <div class="startup-glass-tab" style="flex: 1; padding: 6px 4px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; box-sizing: border-box;" onclick="if(navigator.share) { navigator.share({ title: 'Weather Box', url: 'https://weather-box-ten.vercel.app' }); } else { window.open('https://weather-box-ten.vercel.app', '_blank'); }">
                                     <div style="display: flex; align-items: center; gap: 4px; min-width: 0;">
-                                        <img src="assets/icons/share.svg" style="width: 1.2rem; height: 1.2rem;" alt="Share">
+                                        <img src="${window.getCachedAsset(`assets/icons/share.svg`)}" style="width: 1.2rem; height: 1.2rem;" alt="Share">
                                         <div style="display: flex; flex-direction: column; min-width: 0;">
                                             <span style="font-size: 0.55rem; font-weight: bold; color: #F9FAFB; font-family: 'LocalComicSans', 'Comic Sans MS', 'Comic Sans', cursive; white-space: nowrap;">Share</span>
                                             <span style="font-size: 0.4rem; opacity: 0.8; color: #F9FAFB; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'LocalMerriweatherSans', 'Merriweather Sans', sans-serif;">Share with friends</span>
@@ -670,7 +829,7 @@ async function fetchStartupCityWeather() {
 
     try {
       const nomRes = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&addressdetails=1`
+        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&addressdetails=1`,
       );
       if (nomRes.ok) {
         const nomData = await nomRes.json();
@@ -695,10 +854,12 @@ async function fetchStartupCityWeather() {
           if (cName) {
             displayCityName = cName;
           }
-          
+
           if (nomData.address) {
-            resolvedCountry = nomData.address.country_code ? nomData.address.country_code.toUpperCase() : resolvedCountry;
-            
+            resolvedCountry = nomData.address.country_code
+              ? nomData.address.country_code.toUpperCase()
+              : resolvedCountry;
+
             let parts = [displayCityName];
             let addr = nomData.address;
             let mandal = addr.county || addr.municipality || addr.suburb || "";
@@ -715,7 +876,7 @@ async function fetchStartupCityWeather() {
               parts.push(postcode);
             }
             if (country && !parts.includes(country)) parts.push(country);
-            
+
             resolvedFullAddress = parts.filter(Boolean).join(",<br>");
           }
         }
@@ -724,7 +885,10 @@ async function fetchStartupCityWeather() {
       console.warn("Startup reverse geo failed", err);
     }
 
-    if (currentStartupCity === localStorage.getItem("lastCity") && localStorage.getItem("lastCityName")) {
+    if (
+      currentStartupCity === localStorage.getItem("lastCity") &&
+      localStorage.getItem("lastCityName")
+    ) {
       displayCityName = localStorage.getItem("lastCityName");
     } else if (majorCities.includes(currentStartupCity)) {
       displayCityName = currentStartupCity;
@@ -761,7 +925,7 @@ async function fetchStartupCityWeather() {
           : "");
     }
 
-    document.getElementById("result").innerHTML = `
+    const htmlString = `
                 <div class="weather-main-display">
                     <div class="weather-info">
                         <div class="city-main" style= "color: #F9FAFB; font-family: 'LocalComicSans', 'Comic Sans MS', 'Comic Sans', cursive; text-transform: capitalize;">${finalCityName}</div>
@@ -793,6 +957,25 @@ async function fetchStartupCityWeather() {
                 </div>
                 ${forecastHtml}
             `;
+
+    if (isPreload) {
+      window.preloadedHomeHTML = htmlString;
+      window.homeLastLoadedCity = currentStartupCity;
+    } else {
+      let homeContainer = document.getElementById("home-result");
+      if (!homeContainer) {
+        homeContainer = document.createElement("div");
+        homeContainer.id = "home-result";
+        homeContainer.className = "result";
+        document.querySelector(".weather-box").appendChild(homeContainer);
+      }
+      homeContainer.innerHTML = htmlString;
+      document.getElementById("result").style.display = "none";
+      homeContainer.style.display = "block";
+      
+      window.preloadedHomeHTML = htmlString;
+      window.homeLastLoadedCity = currentStartupCity;
+    }
   } catch (error) {
     console.warn("Startup city fetch failed", error);
   }
@@ -817,6 +1000,10 @@ document.addEventListener("DOMContentLoaded", function () {
   const homeBtn = document.getElementById("home-btn");
   if (homeBtn) {
     homeBtn.addEventListener("click", function () {
+      if (typeof window.pushAppState === "function") {
+        window.pushAppState("#home");
+      }
+
       const cityInput = document.getElementById("city");
       if (cityInput) {
         cityInput.value = "";
