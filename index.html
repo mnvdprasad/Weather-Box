@@ -5,9 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Weather Box | Real-Time Weather Forecast & Updates</title>
     <link rel="icon" type="image/x-icon" href="assets/title/weatherbox.ico" />
-    <link rel="icon" type="image/png" sizes="32x32" href="assets/title/weatherbox-32.png" />
-    <link rel="icon" type="image/png" sizes="192x192" href="assets/title/weatherbox-192.png" />
-    <link rel="icon" type="image/png" sizes="512x512" href="assets/title/weatherbox-512.png" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="assets/title/weatherbox-32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="192x192"
+      href="assets/title/weatherbox-192.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="512x512"
+      href="assets/title/weatherbox-512.png"
+    />
     <link rel="apple-touch-icon" href="assets/title/weatherbox-180.png" />
     <link
       href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css"
@@ -19,54 +34,242 @@
     />
     <style>
       @import url("https://fonts.googleapis.com/css2?family=Oswald:wght@400;500&display=swap");
+    </style>
+    <script>
+      (function () {
+        const fonts = [
+          {
+            name: "LocalImpact",
+            url: "assets/fonts/impact.ttf",
+            format: "truetype",
+          },
+          {
+            name: "LocalBrushScript",
+            url: "assets/fonts/brushsci.ttf",
+            format: "truetype",
+          },
+          {
+            name: "LocalComicSans",
+            url: "assets/fonts/comic.ttf",
+            format: "truetype",
+          },
+          {
+            name: "LocalLato",
+            url: "assets/fonts/Lato-Regular.ttf",
+            format: "truetype",
+          },
+          {
+            name: "LocalMerriweatherSans",
+            url: "assets/fonts/MerriweatherSans-Regular.ttf",
+            format: "truetype",
+          },
+          {
+            name: "LocalPacifico",
+            url: "assets/fonts/Pacifico-Regular.ttf",
+            format: "truetype",
+          },
+        ];
 
-      /* Self-Hosted Custom Fonts */
-      @font-face {
-        font-family: "LocalImpact";
-        src: url("assets/fonts/impact.ttf") format("truetype");
-        font-weight: normal;
-        font-style: normal;
-        font-display: swap;
-      }
-      @font-face {
-        font-family: "LocalBrushScript";
-        src: url("assets/fonts/brushsci.ttf") format("truetype");
-        font-weight: normal;
-        font-style: normal;
-        font-display: swap;
-      }
-      @font-face {
-        font-family: "LocalComicSans";
-        src: url("assets/fonts/comic.ttf") format("truetype");
-        font-weight: normal;
-        font-style: normal;
-        font-display: swap;
-      }
-      @font-face {
-        font-family: "LocalLato";
-        src: url("assets/fonts/Lato-Regular.ttf") format("truetype");
-        font-weight: normal;
-        font-style: normal;
-        font-display: swap;
-      }
-      @font-face {
-        font-family: "LocalMerriweatherSans";
-        src: url("assets/fonts/MerriweatherSans-Regular.ttf") format("truetype");
-        font-weight: normal;
-        font-style: normal;
-        font-display: swap;
-      }
-      @font-face {
-        font-family: "LocalPacifico";
-        src: url("assets/fonts/Pacifico-Regular.ttf") format("truetype");
-        font-weight: normal;
-        font-style: normal;
-        font-display: swap;
-      }
+        let styleStr = "";
+        fonts.forEach((font) => {
+          const storageKey = "font_" + font.name;
+          const cachedFont = localStorage.getItem(storageKey);
+          if (cachedFont) {
+            styleStr += `@font-face { font-family: "${font.name}"; src: url("${cachedFont}") format("${font.format}"); font-weight: normal; font-style: normal; font-display: swap; }\n`;
+          } else {
+            styleStr += `@font-face { font-family: "${font.name}"; src: url("${font.url}") format("${font.format}"); font-weight: normal; font-style: normal; font-display: swap; }\n`;
 
-      /* Base body styling: dark theme, centered flex layout, full viewport height */
+            fetch(font.url)
+              .then((res) => res.blob())
+              .then((blob) => {
+                const reader = new FileReader();
+                reader.onload = function () {
+                  try {
+                    localStorage.setItem(storageKey, reader.result);
+                  } catch (e) {
+                    console.warn("LocalStorage quota exceeded for fonts");
+                  }
+                };
+                reader.readAsDataURL(blob);
+              })
+              .catch((err) => console.warn("Font fetch failed:", err));
+          }
+        });
+
+        if (styleStr) {
+          const style = document.createElement("style");
+          style.innerHTML = styleStr;
+          document.head.appendChild(style);
+        }
+      })();
+    </script>
+    <script>
+      (function () {
+        const scenes = [
+          {
+            key: "partlycloudy_layer1",
+            url: "assets/scenes/partlycloudy_layer1.webp",
+            selectors: [
+              ".weather-box.partly-cloudy-day .cloud-layer.cloud-1",
+              ".weather-box.partly-cloudy-night .cloud-layer.cloud-1",
+            ],
+            prop: "background-image",
+          },
+          {
+            key: "partlycloudy_layer2",
+            url: "assets/scenes/partlycloudy_layer2.webp",
+            selectors: [
+              ".weather-box.partly-cloudy-day .cloud-layer.cloud-2",
+              ".weather-box.partly-cloudy-night .cloud-layer.cloud-2",
+            ],
+            prop: "background-image",
+          },
+          {
+            key: "mostlycloudy_layer1",
+            url: "assets/scenes/mostlycloudy_layer1.webp",
+            selectors: [
+              ".weather-box.cloudy-day .cloud-layer.cloud-1",
+              ".weather-box.cloudy-night .cloud-layer.cloud-1",
+            ],
+            prop: "background-image",
+          },
+          {
+            key: "mostlycloudy_layer2",
+            url: "assets/scenes/mostlycloudy_layer2.webp",
+            selectors: [
+              ".weather-box.cloudy-day .cloud-layer.cloud-2",
+              ".weather-box.cloudy-night .cloud-layer.cloud-2",
+            ],
+            prop: "background-image",
+          },
+          {
+            key: "overcast_1",
+            url: "assets/scenes/overcast_1.webp",
+            selectors: [".overcast-cloud-layer.overcast-1"],
+            prop: "background-image",
+          },
+          {
+            key: "overcast_2",
+            url: "assets/scenes/overcast_2.webp",
+            selectors: [".overcast-cloud-layer.overcast-2"],
+            prop: "background-image",
+          },
+          {
+            key: "overcast_3",
+            url: "assets/scenes/overcast_3.webp",
+            selectors: [".overcast-cloud-layer.overcast-3"],
+            prop: "background-image",
+          },
+          {
+            key: "lightning_1",
+            url: "assets/scenes/lightning_1.webp",
+            selectors: [".lightning.lightning-1"],
+            prop: "content",
+          },
+          {
+            key: "lightning_2",
+            url: "assets/scenes/lightning_2.webp",
+            selectors: [".lightning.lightning-2"],
+            prop: "content",
+          },
+          {
+            key: "lightning_3",
+            url: "assets/scenes/lightning_3.webp",
+            selectors: [".lightning.lightning-3"],
+            prop: "content",
+          },
+          {
+            key: "lightning_4",
+            url: "assets/scenes/lightning_4.webp",
+            selectors: [".lightning.lightning-4"],
+            prop: "content",
+          },
+          {
+            key: "fog",
+            url: "assets/scenes/fog.webp",
+            selectors: [".fog-layer.fog-1", ".fog-layer.fog-2"],
+            prop: "background-image",
+          },
+        ];
+
+        let sceneStyleStr = "";
+        scenes.forEach((scene) => {
+          const storageKey = "scene_" + scene.key;
+          const cachedScene = localStorage.getItem(storageKey);
+          if (cachedScene) {
+            sceneStyleStr +=
+              scene.selectors.join(", ") +
+              ` { ${scene.prop}: url("${cachedScene}") !important; }\n`;
+          } else {
+            fetch(scene.url)
+              .then((res) => res.blob())
+              .then((blob) => {
+                const reader = new FileReader();
+                reader.onload = function () {
+                  try {
+                    localStorage.setItem(storageKey, reader.result);
+                  } catch (e) {
+                    console.warn("LocalStorage quota exceeded for scenes");
+                  }
+                };
+                reader.readAsDataURL(blob);
+              })
+              .catch((err) => console.warn("Scene fetch failed:", err));
+          }
+        });
+
+        if (sceneStyleStr) {
+          const style = document.createElement("style");
+          style.innerHTML = sceneStyleStr;
+          document.head.appendChild(style);
+        }
+      })();
+    </script>
+    <script>
+      window.getCachedAsset = function (url) {
+        try {
+          if (
+            url.includes("assets/icons/") &&
+            localStorage.getItem("disableAnimations") === "true"
+          ) {
+            url = url.replace("assets/icons/", "assets/icons/static/");
+          }
+          const storageKey = "asset_" + url;
+          const cachedAsset = localStorage.getItem(storageKey);
+
+          if (cachedAsset && cachedAsset.startsWith("data:image")) {
+            return cachedAsset;
+          } else {
+            if (!window._assetFetchPromises) window._assetFetchPromises = {};
+            if (!window._assetFetchPromises[url]) {
+              window._assetFetchPromises[url] = fetch(url)
+                .then((res) => {
+                  if (!res.ok) throw new Error("Network error");
+                  return res.blob();
+                })
+                .then((blob) => {
+                  const reader = new FileReader();
+                  reader.onload = function () {
+                    try {
+                      localStorage.setItem(storageKey, reader.result);
+                    } catch (e) {
+                      console.warn("LocalStorage quota exceeded for assets");
+                    }
+                  };
+                  reader.readAsDataURL(blob);
+                })
+                .catch((err) => console.warn("Asset fetch failed:", err));
+            }
+            return url;
+          }
+        } catch (e) {
+          return url;
+        }
+      };
+    </script>
+    <style>
       body {
-        font-family: Arial, sans-serif;
+        font-family: "Arial", sans-serif;
         background-color: #0a0a25;
         color: rgb(251, 251, 251);
         display: flex;
@@ -92,15 +295,16 @@
         font-size: 0.7rem;
       }
 
+      * {
+        font-family: "Arial", sans-serif;
+        -webkit-tap-highlight-color: transparent;
+      }
+
       /* Helper to handle overflowing text with an ellipsis (...) */
       .ellipsis-text {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-      }
-
-      * {
-        -webkit-tap-highlight-color: transparent;
       }
 
       /* ==================== MAIN LAYOUT ==================== */
@@ -155,7 +359,6 @@
         scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
       }
 
-      /* Ensure direct children of weather-box are positioned above the background layers */
       .weather-box > * {
         position: relative;
         z-index: 2;
@@ -412,15 +615,6 @@
       }
 
       /* Dropdown box for search suggestions */
-      @keyframes slideDownSuggestions {
-        from { opacity: 0; transform: translateY(-10px) scaleY(0.95); transform-origin: top; }
-        to { opacity: 1; transform: translateY(0) scaleY(1); transform-origin: top; }
-      }
-      @keyframes slideUpSuggestions {
-        from { opacity: 1; transform: translateY(0) scaleY(1); transform-origin: top; }
-        to { opacity: 0; transform: translateY(-10px) scaleY(0.95); transform-origin: top; }
-      }
-      
       .suggestions-box {
         position: absolute;
         top: 100%;
@@ -442,17 +636,43 @@
         flex-direction: column;
         overflow-y: auto;
         max-height: 185px;
+        transform-origin: top center;
+        will-change: transform, opacity;
       }
-      
+
       .suggestions-box.s-open {
-        animation: slideDownSuggestions 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        animation: slideDownSuggestions 0.5s cubic-bezier(0.16, 1, 0.3, 1)
+          forwards;
         display: flex !important;
       }
-      
+
       .suggestions-box.s-closing {
-        animation: slideUpSuggestions 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        animation: slideUpSuggestions 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
         display: flex !important;
       }
+
+      @keyframes slideDownSuggestions {
+        from {
+          opacity: 0;
+          transform: translate3d(0, -6px, 0) scaleY(0.97);
+        }
+        to {
+          opacity: 1;
+          transform: translate3d(0, 0, 0) scaleY(1);
+        }
+      }
+
+      @keyframes slideUpSuggestions {
+        from {
+          opacity: 1;
+          transform: translate3d(0, 0, 0) scaleY(1);
+        }
+        to {
+          opacity: 0;
+          transform: translate3d(0, -4px, 0) scaleY(0.98);
+        }
+      }
+
       .suggestions-box::-webkit-scrollbar {
         width: 4px;
       }
@@ -475,6 +695,7 @@
         gap: 2px;
         flex-shrink: 0;
       }
+      
       .suggestion-item:hover,
       .suggestion-item.active {
         background: rgba(255, 255, 255, 0.15);
@@ -528,6 +749,14 @@
         border-radius: 4px 0 0 0;
         clip-path: polygon(0 0, 100% 0, 0 100%);
       }
+
+      @media (max-width: 480px) {
+        body {
+          padding-top: 4px;
+          padding-left: 4px;
+          padding-right: 4px;
+        }
+      }
     </style>
     <link rel="stylesheet" href="modules/home/home.css" />
     <link rel="stylesheet" href="modules/main/main.css" />
@@ -537,8 +766,28 @@
     <link rel="stylesheet" href="modules/menu/menu.css" />
   </head>
   <body>
-    <!-- Main wrapper for the entire application, handles overall scaling and background theme -->
     <div class="weather-box">
+      <script>
+        try {
+          const wbox = document.querySelector(".weather-box");
+          if (wbox) {
+            const lastWeatherClass = localStorage.getItem("lastWeatherClass");
+            if (
+              lastWeatherClass &&
+              window.location.hash.startsWith("#weather/")
+            ) {
+              lastWeatherClass
+                .split(" ")
+                .forEach((cls) => wbox.classList.add(cls));
+            }
+            const lastScale = localStorage.getItem("lastZoomScale");
+            if (lastScale) {
+              wbox.style.transform = "scale(" + lastScale + ")";
+              wbox.style.height = "auto";
+            }
+          }
+        } catch (e) {}
+      </script>
       <div
         class="lightning lightning-1"
         role="img"
@@ -583,17 +832,14 @@
       <div class="overcast-cloud-layer overcast-2"></div>
       <div class="overcast-cloud-layer overcast-3"></div>
 
-      <!-- Top Left Controls (Icons injected dynamically) -->
       <div class="top-left-controls" id="top-left-controls"></div>
 
-      <!-- Title and Author attribution -->
       <h2>
         <span class="weatherbox-title">Weather Box</span>
         <span class="author-text">by mnvd</span>
       </h2>
       <p id="current-time"></p>
 
-      <!-- Search bar area: current location button, text input, suggestions dropdown, search button -->
       <div class="search-container">
         <button id="location-btn" title="Current Location">
           <svg
@@ -629,56 +875,58 @@
         <button id="search-btn">Search</button>
       </div>
 
-      <!-- Main container where weather data (current, forecast, details) will be injected dynamically -->
       <div class="result" id="result"></div>
 
-      <!-- About Us Panel Overlay -->
       <div id="about-us-panel" class="about-panel"></div>
       <div id="privacy-panel" class="about-panel"></div>
       <div id="terms-panel" class="about-panel"></div>
     </div>
 
+    <script src="modules/tempenv/keyhelper.js"></script>
     <script src="modules/home/home.js"></script>
     <script src="modules/backgrounds/backgrounds.js"></script>
     <script src="modules/settings/settings.js"></script>
     <script src="modules/smart-alerts/smart-alerts.js"></script>
     <script src="modules/menu/menu.js"></script>
     <script src="modules/main/main.js"></script>
+    <script src="modules/navigation/navigation.js"></script>
     <script>
       document.addEventListener("DOMContentLoaded", function () {
-        if (localStorage.getItem("rememberCity") === "true") {
-          const lastCity = localStorage.getItem("lastCity");
-          if (lastCity) {
-            const cityInput = document.getElementById("city");
-            if (cityInput) cityInput.value = lastCity;
-            currentStartupCity = lastCity;
-            fetchStartupCityWeather();
-          } else {
-            showRandomStartupCity();
-          }
-        } else {
-          showRandomStartupCity();
-        }
-
         const weatherBox = document.querySelector(".weather-box");
-        if (weatherBox) {
-          let roTimer;
-          new ResizeObserver(() => {
-            if (roTimer) clearTimeout(roTimer);
-            roTimer = setTimeout(() => {
-              const match = weatherBox.style.transform.match(/scale\(([^)]+)\)/);
-              const scale = match ? parseFloat(match[1]) : 1;
-              const visualDiff = weatherBox.offsetHeight * scale - weatherBox.offsetHeight;
-              weatherBox.style.marginBottom = `${visualDiff}px`;
-            }, 150);
-          }).observe(weatherBox);
-        }
+        try {
+          const lastScale = localStorage.getItem("lastZoomScale");
+          if (lastScale && weatherBox) {
+            weatherBox.style.transform = `scale(${lastScale})`;
+            weatherBox.style.height = "auto";
+          }
+        } catch (e) {}
 
         let resizeTimer;
+        let lastWidth = window.innerWidth;
         window.addEventListener("resize", () => {
+          const isMobile =
+            window.innerWidth <= 768 ||
+            /Mobi|Android|iPhone/i.test(navigator.userAgent);
+
+          if (isMobile) {
+            if (Math.abs(window.innerWidth - lastWidth) < 30) {
+              return;
+            }
+          }
+
+          lastWidth = window.innerWidth;
+
           if (resizeTimer) clearTimeout(resizeTimer);
           resizeTimer = setTimeout(adjustZoom, 150);
         });
+
+        window.addEventListener("orientationchange", () => {
+          setTimeout(() => {
+            lastWidth = window.innerWidth;
+            adjustZoom();
+          }, 200);
+        });
+
         setTimeout(adjustZoom, 100);
 
         const locationBtn = document.getElementById("location-btn");
@@ -731,11 +979,30 @@
           try {
             let isZip = /\d/.test(query);
             const promises = [
-              fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&addressdetails=1&limit=5`),
-              isZip ? Promise.resolve({ ok: false, status: "skipped" }) : fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5`),
-              fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=5&language=en&format=json`),
-              fetch(`/api/weather?action=geo_direct&q=${encodeURIComponent(query)}&limit=5`),
-              isZip ? fetch(`/api/weather?action=geo_zip&zip=${encodeURIComponent(query)}`) : Promise.resolve({ ok: false, status: "skipped" })
+              fetch(
+                `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&addressdetails=1&limit=5`,
+              ),
+              isZip
+                ? Promise.resolve({ ok: false, status: "skipped" })
+                : fetch(
+                    `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5`,
+                  ),
+              fetch(
+                `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=5&language=en&format=json`,
+              ),
+              fetch(
+                window.getWeatherEndpoint("geo_direct", {
+                  q: encodeURIComponent(query),
+                  limit: 5,
+                }),
+              ),
+              isZip
+                ? fetch(
+                    window.getWeatherEndpoint("geo_zip", {
+                      zip: encodeURIComponent(query),
+                    }),
+                  )
+                : Promise.resolve({ ok: false, status: "skipped" }),
             ];
 
             const [nomRes, photonRes, omRes, owmRes, owmZipRes] =
@@ -1148,7 +1415,12 @@
               const lat = position.coords.latitude;
               const lon = position.coords.longitude;
               try {
-                const res = await fetch(`/api/weather?action=geo_reverse&lat=${lat}&lon=${lon}`);
+                const res = await fetch(
+                  window.getWeatherEndpoint("geo_reverse", {
+                    lat: lat,
+                    lon: lon,
+                  }),
+                );
                 const data = await res.json();
                 if (data && data.length > 0) {
                   document.getElementById("city").value = data[0].name;
@@ -1245,12 +1517,24 @@
               `;
         msgBox.style.display = "block";
       }
+      let zoomRAF = null;
       function adjustZoom() {
-        const box = document.querySelector(".weather-box");
+        if (zoomRAF) return;
+        zoomRAF = requestAnimationFrame(() => {
+          performZoom();
+          zoomRAF = null;
+        });
+      }
 
-        // Get dimensions directly without expensive DOM cloning
+      function performZoom() {
+        if (window.visualViewport && window.visualViewport.scale !== 1) {
+          return;
+        }
+
+        const box = document.querySelector(".weather-box");
+        if (!box) return;
         const targetWidth = box.offsetWidth || 350;
-        const targetHeight = 550; // Use baseline 550px measurement for scale calculation
+        const targetHeight = 550;
 
         const isMobile = window.innerWidth <= 480;
         const gapX = isMobile ? 10 : 50;
@@ -1258,24 +1542,34 @@
         const scaleX = (window.innerWidth - gapX) / targetWidth;
         const scaleY = (window.innerHeight - gapY) / targetHeight;
         const scale = Math.min(scaleX, scaleY);
+
         box.style.transform = `scale(${scale})`;
         box.style.height = "auto";
+
+        try {
+          localStorage.setItem("lastZoomScale", scale.toString());
+        } catch (e) {}
 
         const visualDiff = box.offsetHeight * scale - box.offsetHeight;
         box.style.marginBottom = `${visualDiff}px`;
       }
-      
-      // Auto-trigger suggestion box animations without rewriting display toggles
+
       document.addEventListener("DOMContentLoaded", function () {
         const sBox = document.getElementById("suggestions-box");
         if (sBox) {
           const sObserver = new MutationObserver((mutations) => {
             mutations.forEach((mutation) => {
               if (mutation.attributeName === "style") {
-                if (sBox.style.display === "flex" && !sBox.classList.contains("s-open")) {
+                if (
+                  sBox.style.display === "flex" &&
+                  !sBox.classList.contains("s-open")
+                ) {
                   sBox.classList.remove("s-closing");
                   sBox.classList.add("s-open");
-                } else if (sBox.style.display === "none" && sBox.classList.contains("s-open")) {
+                } else if (
+                  sBox.style.display === "none" &&
+                  sBox.classList.contains("s-open")
+                ) {
                   sBox.classList.remove("s-open");
                   sBox.classList.add("s-closing");
                   setTimeout(() => {
@@ -1285,7 +1579,10 @@
               }
             });
           });
-          sObserver.observe(sBox, { attributes: true, attributeFilter: ["style"] });
+          sObserver.observe(sBox, {
+            attributes: true,
+            attributeFilter: ["style"],
+          });
         }
       });
     </script>
