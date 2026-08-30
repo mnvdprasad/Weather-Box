@@ -46,7 +46,6 @@
         transform: scale(1.1);
       }
 
-
       .radar-icon.active {
         color: #fff;
         opacity: 1;
@@ -89,7 +88,6 @@
       .weather-box.thunderstorm-night .settings-icon,
       .weather-box.thunderstorm-rain-night .settings-icon,
       .weather-box.severe-thunderstorm-night .settings-icon,
-
       .weather-box.clear-day .radar-icon,
       .weather-box.partly-cloudy-day .radar-icon,
       .weather-box.cloudy-day .radar-icon,
@@ -169,7 +167,6 @@
         pointer-events: none;
       }
 
-      /* The settings menu container */
       .settings-menu {
         position: absolute;
         top: 10px;
@@ -193,7 +190,7 @@
         visibility: hidden;
         transition:
           transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1),
-          opacity 0.3s ease,
+          opacity 0.3s ease-out,
           visibility 0.4s;
         display: flex;
         flex-direction: column;
@@ -202,6 +199,12 @@
         color: inherit;
         max-height: calc(100% - 20px);
         overflow-y: auto;
+      }
+
+      .settings-menu.open {
+        transform: scale(1);
+        opacity: 1;
+        visibility: visible;
       }
 
       .settings-menu::-webkit-scrollbar {
@@ -214,12 +217,6 @@
       .settings-menu::-webkit-scrollbar-thumb {
         background: rgba(255, 255, 255, 0.3);
         border-radius: 4px;
-      }
-
-      .settings-menu.open {
-        transform: scale(1);
-        opacity: 1;
-        visibility: visible;
       }
 
       .settings-header {
@@ -261,7 +258,6 @@
         font-weight: 500;
       }
 
-      /* Styling for individual option blocks inside the settings menu */
       .settings-glass-box {
         background: linear-gradient(
           135deg,
@@ -361,7 +357,6 @@
         border-radius: 4px;
       }
 
-      /* Checkbox switch styling for Remember me, Hide alerts */
       .switch {
         position: relative;
         display: inline-block;
@@ -408,7 +403,6 @@
         transform: translateX(16px);
       }
 
-      /* Auto refresh settings */
       .refresh-select {
         position: absolute;
         top: 0;
@@ -518,7 +512,6 @@
         margin-left: -1px;
       }
 
-      /* Toggle buttons for time format (12H / 24H) */
       .time-format-toggle {
         position: relative;
         width: 62px;
@@ -575,7 +568,6 @@
         padding-left: 3px;
       }
 
-      /* Units Buttons */
       .unit-group {
         display: flex;
         flex-direction: row;
@@ -605,7 +597,6 @@
         margin-top: 3px;
       }
 
-      /* Settings optiona for Units */
       .settings-option {
         padding: 6px 12px;
         border-radius: 6px;
