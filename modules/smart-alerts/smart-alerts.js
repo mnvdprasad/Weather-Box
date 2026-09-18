@@ -1,815 +1,929 @@
-/* Generates context-aware weather alerts based on current conditions and forecasts. */
 function generateSmartAlerts(context) {
   const {
     officialAlerts = [],
-    temp = 0,
-    windKmh = 0,
-    uvData = null,
-    wId = 800,
-    currentHourIndex = 0,
+    normalizedWeather,
     aqi = 0,
-    precip = 0,
-    visibility = 10,
-    uvIndex = 0,
-    feelsLike = 0,
-    humidity = 0,
+    currentHourIndex = 0,
     currentTimeFormat = "12-hour",
     currentUnits = { temp: "Celsius", wind: "km/h" },
-    pressureTrend = "steady",
-    pressureHpa = 1013,
     grassStatus = null,
     treeStatus = null,
     weedStatus = null,
-    displayFeelsLike = 0,
     dewPoint = 0,
-    cloudCover = 0,
-    visibilityVal = 10,
-    isNight = false
+    uvData = null,
+    pressureTrend = "steady",
   } = context;
 
-          let smartAlerts = [];
-          const addAlert = (msg) => {
-            if (smartAlerts.length < 25 && !smartAlerts.includes(msg))
-              smartAlerts.push(msg);
-          };
+  const { current = {}, hourly = [] } = normalizedWeather || {};
+  const temp = current.tempC ?? 0;
+  const windKmh = current.windKmh ?? 0;
+  const wId = current.weatherCode ?? 800;
+  const visibility = current.visibilityKm ?? 10;
+  const precip = current.rainMm ?? 0;
+  const feelsLike = current.feelsLikeC ?? 0;
+  const displayFeelsLike =
+    currentUnits.temp === "Fahrenheit" ? (feelsLike * 9) / 5 + 32 : feelsLike;
+  const humidity = current.humidityPercent ?? 0;
+  let uvIndex = current.uvIndex ?? 0;
+  if (
+    !uvIndex &&
+    uvData &&
+    uvData.hourly &&
+    uvData.hourly.uv_index &&
+    uvData.hourly.uv_index[currentHourIndex] !== undefined
+  ) {
+    uvIndex = Number(uvData.hourly.uv_index[currentHourIndex].toFixed(1));
+  }
+  const cloudCover = current.cloudCoverPercent ?? 0;
+  const pressureHpa = current.pressureHpa ?? 1013;
+  const visibilityVal = visibility;
+  const isNight = current.isNight ?? false;
 
-          if (officialAlerts.length > 0) {
-            officialAlerts.forEach((alertText) => {
-              addAlert(`🚨 OFFICIAL WARNING: ${alertText}`);
-            });
-          }
+  let smartAlerts = [];
+  const addAlert = (msg) => {
+    if (smartAlerts.length < 25 && !smartAlerts.includes(msg))
+      smartAlerts.push(msg);
+  };
 
-          // Comprehensive Predictive Forecasting (Next 12 Hours)
-          let predictions = {
-            rainStart: -1,
-            rainStop: -1,
-            snowStart: -1,
-            snowStop: -1,
-            stormStart: -1,
-            fogStart: -1,
-            clearSkiesStart: -1,
-            overcastStart: -1,
-            highHumidityStart: -1,
-            maxTemp: temp,
-            maxTempHour: currentHourIndex,
-            minTemp: temp,
-            minTempHour: currentHourIndex,
-            maxWind: windKmh,
-            maxWindHour: currentHourIndex,
-            highPrecipProbHour: -1,
-            maxPrecipProb: 0,
-            maxRainRate: 0,
-            rainDuration: 0,
-            snowAccumulation: 0,
-            iceRisk: false,
-          };
+  if (officialAlerts.length > 0) {
+    const esc =
+      window.escapeHTML ||
+      ((s) =>
+        (s || "").replace(
+          /[&<>'"]/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              "'": "&#39;",
+              '"': "&quot;",
+            })[c] || c,
+        ));
+    officialAlerts.forEach((alertObj) => {
+      let eventText = typeof alertObj === "string" ? alertObj : alertObj.event;
+      addAlert(
+        `🚨 <span style="color: #ff4444; font-weight: bold;">WEATHER ALERT:</span> <span style="color: #ff5555; font-weight: bold;">${esc(eventText)}</span>`,
+      );
+    });
+  }
 
-          let currentCode =
-            uvData && uvData.hourly && uvData.hourly.weather_code
-              ? uvData.hourly.weather_code[currentHourIndex]
-              : wId;
-          let isCurrentlyRaining =
-            (currentCode >= 51 && currentCode <= 67) ||
-            (currentCode >= 80 && currentCode <= 82) ||
-            (wId >= 500 && wId < 600);
-          let isCurrentlySnowing =
-            (currentCode >= 71 && currentCode <= 77) ||
-            (currentCode >= 85 && currentCode <= 86) ||
-            (wId >= 600 && wId < 700);
-          let isCurrentlyStorming =
-            (currentCode >= 95 && currentCode <= 99) ||
-            (wId >= 200 && wId < 300);
-          let isCurrentlyFoggy =
-            currentCode === 45 || currentCode === 48 || wId === 741;
-          let isCurrentlyClear =
-            currentCode === 0 || currentCode === 1 || wId === 800;
-          let isCurrentlyOvercast = currentCode === 3 || wId === 804;
+  let predictions = {
+    rainStart: -1,
+    rainStop: -1,
+    snowStart: -1,
+    snowStop: -1,
+    stormStart: -1,
+    fogStart: -1,
+    clearSkiesStart: -1,
+    overcastStart: -1,
+    highHumidityStart: -1,
+    maxTemp: temp,
+    maxTempHour: currentHourIndex,
+    minTemp: temp,
+    minTempHour: currentHourIndex,
+    maxWindSpeed: windKmh,
+    maxWindSpeedHour: currentHourIndex,
+    maxWindGust: windKmh,
+    maxWindGustHour: currentHourIndex,
+    maxPrecipProb: 0,
+    hasValidPrecipProb: false,
+    highPrecipProbHour: -1,
+    maxRainRate: 0,
+    rainDuration: 0,
+    snowAccumulationCm: 0,
+    iceRisk: false,
+    sleetRisk: false,
+    maxStormCode: -1,
+    maxCape: 0,
+  };
 
-          if (uvData && uvData.hourly && uvData.hourly.time) {
-            for (
-              let i = currentHourIndex + 1;
-              i <= currentHourIndex + 12;
-              i++
-            ) {
-              if (i >= uvData.hourly.time.length) break;
-              let hCode = uvData.hourly.weather_code[i];
-              let hTempOrig = uvData.hourly.temperature_2m[i];
-              let hWindOrig = uvData.hourly.wind_speed_10m[i];
-              let hHumidity = uvData.hourly.relative_humidity_2m[i];
-              let hPop = uvData.hourly.precipitation_probability[i];
+  let isCurrentlyRaining = wId >= 300 && wId < 600;
+  let isCurrentlySnowing = wId >= 600 && wId < 700;
+  let isCurrentlyStorming = wId >= 200 && wId < 300;
+  let isCurrentlyFoggy = wId === 741 || wId === 701;
+  let isCurrentlyClear = wId === 800;
+  let isCurrentlyOvercast = wId === 804 || wId === 803;
 
-              if (hTempOrig > predictions.maxTemp) {
-                predictions.maxTemp = hTempOrig;
-                predictions.maxTempHour = i;
-              }
-              if (hTempOrig < predictions.minTemp) {
-                predictions.minTemp = hTempOrig;
-                predictions.minTempHour = i;
-              }
-              if (hWindOrig > predictions.maxWind) {
-                predictions.maxWind = hWindOrig;
-                predictions.maxWindHour = i;
-              }
+  let rainingState = isCurrentlyRaining;
+  let snowingState = isCurrentlySnowing;
+  let foggyState = isCurrentlyFoggy;
+  let clearState = isCurrentlyClear;
+  let overcastState = isCurrentlyOvercast;
 
-              let hIsRaining =
-                (hCode >= 51 && hCode <= 67) ||
-                (hCode >= 80 && hCode <= 82) ||
-                hCode >= 95;
-              let hIsSnowing =
-                (hCode >= 71 && hCode <= 77) || (hCode >= 85 && hCode <= 86);
-              let hIsStorming = hCode >= 95 && hCode <= 99;
-              let hIsFoggy = hCode === 45 || hCode === 48;
-              let hIsClear = hCode === 0 || hCode === 1;
-              let hIsOvercast = hCode === 3;
+  if (hourly.length > 0) {
+    for (let i = currentHourIndex; i <= currentHourIndex + 12; i++) {
+      if (i >= hourly.length) break;
+      let hData = hourly[i];
+      let hCode = hData.weatherCode;
+      let hTempOrig = hData.tempC;
+      let hWindOrig = hData.windKmh;
+      let hGustOrig = hData.windGustKmh;
+      let hHumidity = hData.humidityPercent;
+      let hPop = hData.popPercent;
 
-              let hRain =
-                uvData.hourly.rain && uvData.hourly.rain[i]
-                  ? uvData.hourly.rain[i]
-                  : 0;
-              let hSnow =
-                uvData.hourly.snowfall && uvData.hourly.snowfall[i]
-                  ? uvData.hourly.snowfall[i]
-                  : 0;
-              if (hRain > predictions.maxRainRate)
-                predictions.maxRainRate = hRain;
-              if (hIsRaining || hRain > 0) predictions.rainDuration += 1;
-              predictions.snowAccumulation += hSnow;
-              if ((hIsRaining || hRain > 0) && hTempOrig <= 0)
-                predictions.iceRisk = true;
+      if (hTempOrig > predictions.maxTemp) {
+        predictions.maxTemp = hTempOrig;
+        predictions.maxTempHour = i;
+      }
+      if (hTempOrig < predictions.minTemp) {
+        predictions.minTemp = hTempOrig;
+        predictions.minTempHour = i;
+      }
+      if (hWindOrig > predictions.maxWindSpeed) {
+        predictions.maxWindSpeed = hWindOrig;
+        predictions.maxWindSpeedHour = i;
+      }
+      if (hGustOrig > predictions.maxWindGust) {
+        predictions.maxWindGust = hGustOrig;
+        predictions.maxWindGustHour = i;
+      }
 
-              if (
-                !isCurrentlyRaining &&
-                hIsRaining &&
-                predictions.rainStart === -1
-              )
-                predictions.rainStart = i;
-              if (
-                isCurrentlyRaining &&
-                !hIsRaining &&
-                predictions.rainStop === -1
-              )
-                predictions.rainStop = i;
+      let hPrecip = hData.precipMm;
+      let hRain = hData.rainMm;
+      let hSnowCm = hData.snowfallCm;
 
-              if (
-                !isCurrentlySnowing &&
-                hIsSnowing &&
-                predictions.snowStart === -1
-              )
-                predictions.snowStart = i;
-              if (
-                isCurrentlySnowing &&
-                !hIsSnowing &&
-                predictions.snowStop === -1
-              )
-                predictions.snowStop = i;
+      let isWmoSnow = window.isWmoSnow(hCode);
+      let isWmoMixed = window.isWmoMixed(hCode);
 
-              if (
-                !isCurrentlyStorming &&
-                hIsStorming &&
-                predictions.stormStart === -1
-              )
-                predictions.stormStart = i;
-              if (!isCurrentlyFoggy && hIsFoggy && predictions.fogStart === -1)
-                predictions.fogStart = i;
+      let hIsRaining =
+        (hCode >= 51 && hCode <= 67) ||
+        (hCode >= 80 && hCode <= 82) ||
+        isWmoMixed ||
+        hRain > 0;
+      let hIsSnowing = isWmoSnow || isWmoMixed || hSnowCm > 0;
+      let hIsStorming = hCode >= 95 && hCode <= 99;
+      let hIsFoggy = hCode === 45 || hCode === 48;
+      let hIsClear = hCode === 0 || hCode === 1;
+      let hIsOvercast = hCode === 3;
 
-              if (
-                !isCurrentlyClear &&
-                hIsClear &&
-                predictions.clearSkiesStart === -1
-              )
-                predictions.clearSkiesStart = i;
-              if (
-                !isCurrentlyOvercast &&
-                hIsOvercast &&
-                predictions.overcastStart === -1
-              )
-                predictions.overcastStart = i;
+      if (hIsRaining && !hIsSnowing && hPrecip > predictions.maxRainRate) {
+        predictions.maxRainRate = hPrecip;
+      }
+      if (hIsRaining) predictions.rainDuration += 1;
+      predictions.snowAccumulationCm += hSnowCm;
+      let hIsFreezingPrecip = [56, 57, 66, 67].includes(hCode);
+      let hIsSleet = [79].includes(hCode);
+      if (hIsFreezingPrecip || (hRain > 0 && hTempOrig <= 0)) {
+        predictions.iceRisk = true;
+      }
+      if (hIsSleet) {
+        predictions.sleetRisk = true;
+      }
 
-              if (hHumidity > 85 && predictions.highHumidityStart === -1)
-                predictions.highHumidityStart = i;
-              if (hPop > predictions.maxPrecipProb) {
-                predictions.maxPrecipProb = hPop;
-                if (hPop >= 60 && predictions.highPrecipProbHour === -1)
-                  predictions.highPrecipProbHour = i;
-              }
-            }
-          }
+      if (!rainingState && hIsRaining && predictions.rainStart === -1) {
+        predictions.rainStart = i;
+        rainingState = true;
+      } else if (rainingState && !hIsRaining && predictions.rainStop === -1) {
+        predictions.rainStop = i;
+        rainingState = false;
+      }
 
-          const formatHour = (index) => {
-            if (index === -1) return "now";
-            if (!uvData || !uvData.hourly || !uvData.hourly.time) return "now";
-            const timeStr = uvData.hourly.time[index];
-            if (!timeStr) return "now";
-            const hour = parseInt(timeStr.split("T")[1].substring(0, 2));
-            if (
-              typeof currentTimeFormat !== "undefined" &&
-              currentTimeFormat === "24-hour"
-            ) {
-              return `${hour.toString().padStart(2, "0")}:00`;
-            } else {
-              let ampm = hour >= 12 ? "pm" : "am";
-              let h = hour % 12 || 12;
-              return `${h} ${ampm}`;
-            }
-          };
+      if (!snowingState && hIsSnowing && predictions.snowStart === -1) {
+        predictions.snowStart = i;
+        snowingState = true;
+      } else if (snowingState && !hIsSnowing && predictions.snowStop === -1) {
+        predictions.snowStop = i;
+        snowingState = false;
+      }
 
-          let dispWind =
-            currentUnits.wind === "mph"
-              ? Math.round(predictions.maxWind * 0.621371)
-              : currentUnits.wind === "m/s"
-                ? Math.round(predictions.maxWind / 3.6)
-                : Math.round(predictions.maxWind);
-          let dispMax =
-            currentUnits.temp === "Fahrenheit"
-              ? Math.round((predictions.maxTemp * 9) / 5 + 32)
-              : Math.round(predictions.maxTemp);
-          let dispMin =
-            currentUnits.temp === "Fahrenheit"
-              ? Math.round((predictions.minTemp * 9) / 5 + 32)
-              : Math.round(predictions.minTemp);
-          let unit = currentUnits.temp === "Fahrenheit" ? "°F" : "°C";
-          let lightningProbability =
-            predictions.stormStart !== -1 ? predictions.maxPrecipProb : 0;
+      if (hIsStorming) {
+        if (!isCurrentlyStorming && predictions.stormStart === -1) {
+          predictions.stormStart = i;
+        }
+        if (hCode > predictions.maxStormCode) {
+          predictions.maxStormCode = hCode;
+        }
+      }
 
-          /* =============== EXTREME WEATHER ALERTS ================*/
-          if (predictions.maxTemp >= 45)
-            addAlert(
-              `☠️ EXTREME HEAT EMERGENCY! Temperatures could reach ${dispMax}${unit}. Avoid outdoor activities unless absolutely necessary.`,
-            );
-          if (predictions.minTemp <= -20)
-            addAlert(
-              `🧊 EXTREME COLD WARNING! Temperatures as low as ${dispMin}${unit}. Limit outdoor exposure, dress in layers, and protect exposed skin.`,
-            );
-          if (predictions.maxWind >= 200)
-            addAlert(
-              `☠️ LIFE-THREATENING WINDS! Sustained winds up to (${dispWind} ${currentUnits.wind}). Stay indoors and away from windows.`,
-            );
-          if (predictions.maxWind >= 150)
-            addAlert(
-              `🌀 VIOLENT STORM CONDITIONS! Wind gusts up to ${dispWind} ${currentUnits.wind}. Stay indoors and avoid all unnecessary travel.`,
-            );
-          if (predictions.maxWind >= 118)
-            addAlert(
-              `🌀 HURRICANE FORCE WINDS! Wind gusts up to ${dispWind} ${currentUnits.wind} expected around ${formatHour(predictions.maxWindHour)}. Stay indoors and avoid unnecessary travel.`,
-            );
-          if (predictions.stormStart !== -1 && lightningProbability >= 90)
-            addAlert(
-              `⚡ INTENSE LIGHTNING ACTIVITY! Expected around ${formatHour(predictions.stormStart)}. Stay away from trees, open areas and metal objects.`,
-            );
-          if (predictions.maxRainRate >= 80)
-            addAlert(`🌊 FLASH FLOOD RISK! Extremely heavy rainfall is expected.`);
-          if (predictions.snowAccumulation >= 20)
-            addAlert(
-              `❄️ HEAVY SNOW EXPECTED! Significant snowfall is expected.`,
-            );
-          if (aqi > 300)
-            addAlert(
-              `☠️ HAZARDOUS AIR QUALITY! AQI ${aqi}. Health emergency conditions.`,
-            );
-          if (uvIndex >= 11)
-            addAlert(
-              `☠️ EXTREME UV INDEX! Avoid direct sun exposure during peak UV hours.`,
-            );
+      let hCape = hData.cape;
+      if (hCape > predictions.maxCape) {
+        predictions.maxCape = hCape;
+      }
 
-          /* =============== SEVERE WEATHER & COMBINATION ALERTS =============== */
-          if (predictions.stormStart !== -1 && predictions.maxWind >= 70)
-            addAlert(
-              `🌪️ Expect some wild winds! Thunderstorms may bring gusts up to ${dispWind} ${currentUnits.wind}.`,
-            );
-          if (predictions.stormStart !== -1 && predictions.maxWind >= 60)
-            addAlert(
-              `⛈️ Severe thunderstorms could arrive around ${formatHour(predictions.stormStart)}, bringing damaging wind gusts up to ${dispWind} ${currentUnits.wind}.`,
-            );
-          if (predictions.maxWind >= 89)
-            addAlert(
-              `⚠️ Strong storms are expected around  expected around ${formatHour(predictions.maxWindHour)}, bringing wind gusts up to ${dispWind} ${currentUnits.wind}.`,
-            );
-          if (predictions.maxWind >= 75)
-            addAlert(
-              `🌪️ Wind gusts could reach ${dispWind} ${currentUnits.wind} today. Be prepared for difficult travel and isolated damage.`,
-            );
-          if (predictions.maxWind >= 50 && predictions.rainStart !== -1)
-            addAlert(
-              `🌧️💨 A spell of windy rain is expected around ${formatHour(predictions.rainStart)}. Travel could be slower with poor visibility.`,
-            );
-          if (predictions.stormStart !== -1 && predictions.rainStart !== -1)
-            addAlert(
-              `⛈️ Thunderstorms with heavy rain are expected today. Be ready for wet roads and changing weather.`,
-            );
-          if (predictions.stormStart !== -1 && uvIndex >= 8)
-            addAlert(
-              `⚡ Hot weather and an unstable atmosphere could spark thunderstorms later today.`,
-            );
-          if (predictions.stormStart !== -1 && humidity > 80 && temp > 30)
-            addAlert(
-              `🌩️ Warm, humid air could fuel strong thunderstorms around ${formatHour(predictions.stormStart)}.`,
-            );
-          if (humidity > 85 && temp >= 30)
-            addAlert(
-              `🥵 It's going to feel hot and sticky today. Stay cool and keep hydrated.`,
-            );
-          if (pressureTrend === "falling_fast")
-            addAlert(
-              `📉 Air pressure is falling quickly, which could lead to stormy weather later today.`,
-            );
-          if (pressureHpa <= 990)
-            addAlert(
-              `🌪️ Very low air pressure could bring windy, wet, and unsettled weather today.`,
-            );
+      if (!foggyState && hIsFoggy && predictions.fogStart === -1) {
+        predictions.fogStart = i;
+        foggyState = true;
+      }
 
-          /* =============== AIR QUALITY & HEALTH ALERTS =============== */
-          if (aqi > 200 && aqi <= 300)
-            addAlert(
-              `😷 Air quality is very unhealthy today (AQI ${aqi}). It's best to reduce outdoor activities whenever possible.`,
-            );
-          if (aqi > 150 && aqi <= 200)
-            addAlert(`😷 The air quality is unhealthy today (AQI ${aqi}). Consider spending less time outdoors.`);
-          if (aqi > 150 && predictions.maxWind < 10)
-            addAlert(
-              `😷 Light winds may prevent polluted air from clearing today.`,
-            );
-          if (aqi > 100 && aqi <= 150)
-            addAlert(
-              `⚠️ Air quality may be unhealthy for sensitive groups (AQI ${aqi}). Limit prolonged outdoor activity.`,
-            );
-          if (
-            grassStatus.label === "High" ||
-            grassStatus.label === "Very High" ||
-            treeStatus.label === "High" ||
-            treeStatus.label === "Very High" ||
-            weedStatus.label === "High" ||
-            weedStatus.label === "Very High"
-          )
-            addAlert(
-              `🤧 High pollen levels are expected today. Allergy symptoms may be worse than usual.`,
-            );
-          if (humidity > 80 && temp > 28)
-            addAlert(
-              `💦 It's going to feel hot and sticky today. Stay hydrated if you're outdoors.`,
-            );
+      if (!clearState && hIsClear && predictions.clearSkiesStart === -1) {
+        predictions.clearSkiesStart = i;
+        clearState = true;
+      }
 
-          /* =============== THUNDERSTORM & LIGHTNING ALERTS =============== */
-          if (predictions.stormStart !== -1) {
-            addAlert(
-              `⛈️ Thunderstorms are expected around ${formatHour(predictions.stormStart)}. Keep an eye on the weather if you're heading out.`,
-            );
-          }
-          if (lightningProbability >= 90)
-            addAlert(`⚡ Intense lightning is expected today. Avoid being outdoors whenever possible`);
-          else if (lightningProbability >= 80)
-            addAlert(`⚡ Frequent lightning is expected. Avoid open areas.`);
-          else if (lightningProbability >= 70)
-            addAlert(`⚡ There's a chance of lightning today. Keep an eye on the weather.`);
-          if (lightningProbability >= 50 && predictions.rainStart === -1)
-            addAlert(`⚡ Dry lightning is possible today.`);
+      if (!overcastState && hIsOvercast && predictions.overcastStart === -1) {
+        predictions.overcastStart = i;
+        overcastState = true;
+      }
 
-          /* =============== TEMPERATURE & HEAT/COLD ALERTS =============== */
-          if (predictions.maxTemp >= 40)
-            addAlert(
-              `🔥 Extreme heat is on the way! Temperatures could climb to ${dispMax}${unit} around ${formatHour(predictions.maxTempHour)}. Stay hydrated!`,
-            );
-          else if (predictions.maxTemp >= 35)
-            addAlert(
-              `🔥 It's going to be very hot today, with temperatures reaching ${dispMax}${unit} around ${formatHour(predictions.maxTempHour)}.`,
-            );
-          else if (predictions.maxTemp >= 30)
-            addAlert(
-              `🌡️ It will be a warm day, with highs around ${dispMax}${unit} by ${formatHour(predictions.maxTempHour)}.`,
-            );
+      if (hHumidity > 85 && predictions.highHumidityStart === -1)
+        predictions.highHumidityStart = i;
 
-          if (predictions.minTemp <= -10)
-            addAlert(
-              `🥶 Bitterly cold conditions are expected, with temperatures dropping to ${dispMin}${unit} around ${formatHour(predictions.minTempHour)}. Stay warm and limit outdoor exposure!`,
-            );
-          else if (predictions.minTemp <= 0)
-            addAlert(
-              `🧊 Freezing temperatures are expected around ${formatHour(predictions.minTempHour)}, with lows near ${dispMin}${unit}.`,
-            );
-          else if (predictions.minTemp <= 5)
-            addAlert(
-              `❄️ It will be chilly today, with temperatures dropping to ${dispMin}${unit} around ${formatHour(predictions.minTempHour)}.`,
-            );
+      if (hPop !== "N/A" && hPop !== null && hPop !== undefined) {
+        predictions.hasValidPrecipProb = true;
+        if (hPop > predictions.maxPrecipProb) {
+          predictions.maxPrecipProb = hPop;
+          if (hPop >= 60 && predictions.highPrecipProbHour === -1)
+            predictions.highPrecipProbHour = i;
+        }
+      }
+    }
+  }
 
-          if (predictions.maxTemp - predictions.minTemp >= 20)
-            addAlert(`🌡️ Expect a dramatic temperature change today, from ${dispMin}${unit} to ${dispMax}${unit}.`);
-          else if (predictions.maxTemp - predictions.minTemp >= 15)
-            addAlert(
-              `🧥 A big temperature swing is expected today, from ${dispMin}${unit} to ${dispMax}${unit}.`,
-            );
-          else if (predictions.maxTemp - predictions.minTemp >= 10)
-            addAlert(
-              `🧥 Temperatures will vary noticeably today, ranging from ${dispMin}${unit} to ${dispMax}${unit}.`,
-            );
+  const formatHour = (index) => {
+    if (index === -1) return "now";
+    if (!hourly || !hourly[index]) return "now";
+    const timeStr = hourly[index].timeIso;
+    if (!timeStr) return "now";
+    const hour = parseInt(timeStr.split("T")[1].substring(0, 2));
+    if (
+      typeof currentTimeFormat !== "undefined" &&
+      currentTimeFormat === "24-hour"
+    ) {
+      return `${hour.toString().padStart(2, "0")}:00`;
+    } else {
+      let ampm = hour >= 12 ? "pm" : "am";
+      let h = hour % 12 || 12;
+      return `${h} ${ampm}`;
+    }
+  };
 
-          if (predictions.maxTemp - temp >= 12)
-            addAlert(
-              `📈 Expect a big warm-up today, with temperatures reaching ${dispMax}${unit} around ${formatHour(predictions.maxTempHour)}.`,
-            );
-          else if (predictions.maxTemp - temp >= 8)
-            addAlert(
-              `📈 Temperatures will continue to rise, reaching ${dispMax}${unit} around ${formatHour(predictions.maxTempHour)}.`,
-            );
+  let dispWind =
+    currentUnits.wind === "mph"
+      ? Math.round(predictions.maxWindSpeed * 0.621371)
+      : currentUnits.wind === "m/s"
+        ? Math.round(predictions.maxWindSpeed / 3.6)
+        : Math.round(predictions.maxWindSpeed);
+  let dispGust =
+    currentUnits.wind === "mph"
+      ? Math.round(predictions.maxWindGust * 0.621371)
+      : currentUnits.wind === "m/s"
+        ? Math.round(predictions.maxWindGust / 3.6)
+        : Math.round(predictions.maxWindGust);
+  let dispMax =
+    currentUnits.temp === "Fahrenheit"
+      ? Math.round((predictions.maxTemp * 9) / 5 + 32)
+      : Math.round(predictions.maxTemp);
+  let dispMin =
+    currentUnits.temp === "Fahrenheit"
+      ? Math.round((predictions.minTemp * 9) / 5 + 32)
+      : Math.round(predictions.minTemp);
+  let unit = currentUnits.temp === "Fahrenheit" ? "°F" : "°C";
 
-          if (temp - predictions.minTemp >= 12)
-            addAlert(
-              `📉 Expect a big cooldown tonight, with temperatures dropping to ${dispMin}${unit} around ${formatHour(predictions.minTempHour)}.`,
-            );
-          else if (temp - predictions.minTemp >= 8)
-            addAlert(
-              `📉 Temperatures will cool down tonight, reaching ${dispMin}${unit} around ${formatHour(predictions.minTempHour)}.`,
-            );
+  let isSevere = false;
+  let isInclement = false;
 
-          if (feelsLike >= 42)
-            addAlert(
-              `🔥 It could feel as hot as ${Math.round(displayFeelsLike)}${unit} today. Limit outdoors activities.`,
-            );
-          else if (feelsLike >= 38)
-            addAlert(
-              `🔥 It may feel like ${Math.round(displayFeelsLike)}${unit}. Outdoor activity could become uncomfortable.`,
-            );
+  if (officialAlerts && officialAlerts.length > 0) {
+    officialAlerts.forEach((alert) => {
+      let eText = typeof alert === "string" ? alert : alert.event;
+      let sText = typeof alert === "string" ? "" : alert.severity || "";
+      let uText = typeof alert === "string" ? "" : alert.urgency || "";
+      let combined = (eText + " " + sText + " " + uText).toLowerCase();
 
-          if (feelsLike <= -5)
-            addAlert(
-              `🧊 It could feel as cold as ${Math.round(displayFeelsLike)}${unit} today. Dress warmly and limit time outdoors.`,
-            );
-          else if (feelsLike <= 0)
-            addAlert(
-              `🥶 It will feel below freezing today, with ${Math.round(displayFeelsLike)}${unit}. Bundle up before heading out.`,
-            );
+      if (
+        combined.includes("warning") ||
+        combined.includes("severe") ||
+        combined.includes("extreme") ||
+        combined.includes("emergency") ||
+        combined.includes("danger")
+      ) {
+        isSevere = true;
+      } else {
+        isInclement = true;
+      }
+    });
+  }
 
-          if (Math.abs(feelsLike - temp) >= 5) {
-            let direction = feelsLike > temp ? "warmer" : "colder";
-            addAlert(
-              `🌡️ It will feel much ${direction} than the actual temperature, around ${Math.round(displayFeelsLike)}${unit}.`,
-            );
-          } else if (Math.abs(feelsLike - temp) >= 3) {
-            let direction = feelsLike > temp ? "warmer" : "colder";
-            addAlert(
-              `🌡️ It will feel ${direction} than the actual temperature, around ${Math.round(displayFeelsLike)}${unit}.`,
-            );
-          }
+  /* =============== RAIN =============== */
+  if (predictions.maxRainRate >= 80) {
+    isSevere = true;
+    addAlert(
+      `🌊 Extremely heavy rainfall is expected. Be alert for potential flash flooding.`,
+    );
+  } else if (predictions.maxRainRate >= 50) {
+    isSevere = true;
+    addAlert(
+      `🌧️ Torrential rain is expected in this area, with potential for flash flooding.`,
+    );
+  } else if (predictions.maxRainRate >= 25) {
+    isInclement = true;
+    addAlert(
+      `⛈️ Intense downpours and heavy rain are expected in this area today.`,
+    );
+  } else if (predictions.maxRainRate >= 20) {
+    isInclement = true;
+    addAlert(`🌦️ Significant rainfall is expected in this area today.`);
+  } else if (predictions.maxRainRate >= 10) {
+    isInclement = true;
+    addAlert(`🌧️ Steady, moderate rain is expected throughout the day.`);
+  } else if (isCurrentlyRaining) {
+    if (predictions.rainStop !== -1) {
+      addAlert(
+        `🌧️ Rain is expected to stop around ${formatHour(predictions.rainStop)}.`,
+      );
+    } else {
+      addAlert(`🌧️ Rain is expected to continue throughout the day.`);
+    }
+  } else if (predictions.rainStart !== -1) {
+    let timing =
+      predictions.rainStart <= currentHourIndex + 1
+        ? "shortly"
+        : `around ${formatHour(predictions.rainStart)}`;
+    if (
+      predictions.rainStop !== -1 &&
+      predictions.rainStop > predictions.rainStart
+    ) {
+      addAlert(
+        `🌧️ Rain is expected to start ${timing} and stop around ${formatHour(predictions.rainStop)}.`,
+      );
+    } else {
+      addAlert(`🌧️ Rain is expected to start ${timing}.`);
+    }
+  } else if (
+    predictions.highPrecipProbHour !== -1 &&
+    predictions.snowStart === -1
+  ) {
+    let probTemp =
+      uvData?.hourly?.temperature_2m?.[predictions.highPrecipProbHour];
+    if (typeof probTemp !== "number") {
+      probTemp = temp;
+    }
+    let precipType = probTemp <= 0 ? "snow" : "rain";
+    let precipIcon = probTemp <= 0 ? "❄️" : "☔";
+    addAlert(
+      `${precipIcon} There is a ${predictions.maxPrecipProb}% chance of ${precipType} around ${formatHour(predictions.highPrecipProbHour)}.`,
+    );
+  }
 
-          if (temp >= 30 && predictions.minTemp >= 25)
-            addAlert(
-              `🥵 It will remain warm overnight with a low of ${dispMin}${unit}, may make sleeping uncomfortable.`,
-            );
-          if (temp <= 0 && predictions.maxWind >= 30)
-            addAlert(`🥶 Strong winds will make the freezing temperatures feel even colder today.`);
+  /* =============== SNOW & ICE =============== */
+  if (predictions.snowAccumulationCm >= 20) {
+    isSevere = true;
+    addAlert(
+      `❄️ Significant snow accumulation is expected, creating hazardous travel conditions.`,
+    );
+  } else if (predictions.snowAccumulationCm >= 15) {
+    isSevere = true;
+    addAlert(
+      `❄️ Winter storm conditions are expected in this area. Accumulating snow will severely impact travel.`,
+    );
+  } else if (predictions.snowAccumulationCm >= 5) {
+    isInclement = true;
+    addAlert(
+      `☃️ Accumulating snow is expected throughout the day. Watch for slick roads.`,
+    );
+  } else if (isCurrentlySnowing) {
+    if (predictions.snowStop !== -1) {
+      addAlert(
+        `🌤️ Snow is expected to taper off around ${formatHour(predictions.snowStop)}.`,
+      );
+    } else {
+      addAlert(`❄️ Snow is expected to continue falling today.`);
+    }
+  } else if (predictions.snowStart !== -1) {
+    let timing =
+      predictions.snowStart <= currentHourIndex + 1
+        ? "shortly"
+        : `around ${formatHour(predictions.snowStart)}`;
+    if (
+      predictions.snowStop !== -1 &&
+      predictions.snowStop > predictions.snowStart
+    ) {
+      addAlert(
+        `❄️ Snow is expected to start ${timing} and taper off around ${formatHour(predictions.snowStop)}.`,
+      );
+    } else {
+      addAlert(`❄️ Snow is expected to start ${timing}.`);
+    }
+  } else if (predictions.iceRisk === true) {
+    isInclement = true;
+    addAlert(
+      `🧊 Freezing rain and icy patches are expected on roads and sidewalks.`,
+    );
+  } else if (predictions.sleetRisk === true) {
+    isInclement = true;
+    addAlert(
+      `🧊 Ice pellets (sleet) are expected. Watch for slippery conditions.`,
+    );
+  }
 
-          /* =============== RAIN ALERTS =============== */
-          if (predictions.rainStart !== -1) {
-            let timing =
-              predictions.rainStart === currentHourIndex + 1
-                ? "shortly"
-                : `around ${formatHour(predictions.rainStart)}`;
-            addAlert(`🌧️ Rain is expected to begin ${timing}.`);
-          } else if (predictions.rainStop !== -1) {
-            addAlert(
-              `🌤️ Rain may clear up around ${formatHour(predictions.rainStop)}.`,
-            );
-          }
+  /* =============== THUNDERSTORM & LIGHTNING =============== */
+  if (predictions.stormStart !== -1 && predictions.maxStormCode >= 96) {
+    isSevere = true;
+    addAlert(
+      `⚡ Severe thunderstorms are expected around ${formatHour(predictions.stormStart)}.`,
+    );
+  } else if (predictions.stormStart !== -1 && predictions.maxWindGust >= 70) {
+    isSevere = true;
+    addAlert(
+      `🌪️ Severe thunderstorms are expected today with destructive gusts up to ${dispGust} ${currentUnits.wind}.`,
+    );
+  } else if (predictions.stormStart !== -1 && predictions.maxWindGust >= 60) {
+    isSevere = true;
+    addAlert(
+      `⛈️ Severe thunderstorms are arriving around ${formatHour(predictions.stormStart)} with damaging gusts up to ${dispGust} ${currentUnits.wind}.`,
+    );
+  } else if (isCurrentlyStorming) {
+    isInclement = true;
+    addAlert(
+      `⛈️ Thunderstorms are currently occurring and expected to continue.`,
+    );
+  } else if (predictions.stormStart !== -1 && predictions.rainStart !== -1) {
+    isInclement = true;
+    addAlert(
+      `⛈️ Thunderstorms and heavy rain are expected around ${formatHour(predictions.stormStart)}.`,
+    );
+  } else if (predictions.stormStart !== -1) {
+    isInclement = true;
+    addAlert(
+      `⛈️ Thunderstorms are expected around ${formatHour(predictions.stormStart)}.`,
+    );
+  } else if (predictions.stormStart === -1 && predictions.maxCape >= 2500) {
+    isSevere = true;
+    addAlert(
+      `⚠️ Extreme atmospheric instability. Severe weather is possible if storms develop.`,
+    );
+  } else if (predictions.stormStart === -1 && predictions.maxCape >= 1500) {
+    isInclement = true;
+    addAlert(
+      `⚠️ High atmospheric instability. The environment is highly favorable for thunderstorms.`,
+    );
+  }
 
-          if (predictions.maxRainRate >= 50)
-            addAlert(
-              `🌧️ Torrential rain is expected. Flash flooding is possible.`,
-            );
-          else if (predictions.maxRainRate >= 25)
-            addAlert(`⛈️ Heavy rain with intense downpours is expected today.`);
-          else if (predictions.maxRainRate >= 20)
-            addAlert(`🌦️ Heavy rain is expected today.`);
-          else if (predictions.maxRainRate >= 10)
-            addAlert(`🌧️ Moderate rain is expected today.`);
-          else if (predictions.maxRainRate >= 5)
-            addAlert(`🌦️ Light to moderate rain is expected today.`);
-          else if (predictions.rainStart !== -1 && predictions.maxRainRate < 5)
-            addAlert(
-              `🌦️ Light rain is expected around ${formatHour(predictions.rainStart)}.`,
-            );
+  /* =============== TEMPERATURE =============== */
+  if (predictions.maxTemp >= 45) {
+    isSevere = true;
+    addAlert(
+      `☠️ Extreme heat is expected in this area. Temperatures will reach ${dispMax}${unit}. Avoid outdoor activities.`,
+    );
+  } else if (predictions.maxTemp >= 40) {
+    isSevere = true;
+    addAlert(
+      `🔥 Severe heat is expected in this area. Temperatures will peak at ${dispMax}${unit} around ${formatHour(predictions.maxTempHour)}.`,
+    );
+  } else if (predictions.maxTemp >= 35) {
+    isSevere = true;
+    addAlert(
+      `🔥 Dangerously hot conditions are expected. Highs of ${dispMax}${unit} are expected around ${formatHour(predictions.maxTempHour)}.`,
+    );
+  } else if (predictions.maxTemp >= 30) {
+    isInclement = true;
+    addAlert(
+      `🌡️ Warm conditions are expected today, with highs reaching ${dispMax}${unit} around ${formatHour(predictions.maxTempHour)}.`,
+    );
+  } else if (predictions.minTemp <= -20) {
+    isSevere = true;
+    addAlert(
+      `🧊 Extreme cold is expected in this area. Temperatures will drop to ${dispMin}${unit}. There is a severe risk of frostbite.`,
+    );
+  } else if (predictions.minTemp <= -10) {
+    isSevere = true;
+    addAlert(
+      `🥶 Severe cold is expected in this area. Temperatures will drop to ${dispMin}${unit} around ${formatHour(predictions.minTempHour)}.`,
+    );
+  } else if (predictions.minTemp <= 0) {
+    isInclement = true;
+    addAlert(
+      `🧊 Freezing conditions are expected in this area. Sub-zero temperatures of ${dispMin}${unit} are expected around ${formatHour(predictions.minTempHour)}.`,
+    );
+  } else if (predictions.minTemp <= 5) {
+    isInclement = true;
+    addAlert(
+      `❄️ Frosty conditions are expected. Temperatures will dip to ${dispMin}${unit} around ${formatHour(predictions.minTempHour)}.`,
+    );
+  } else if (predictions.maxTemp - predictions.minTemp >= 20) {
+    addAlert(
+      `🌡️ Extreme temperature swings are expected today, ranging from ${dispMin}${unit} to ${dispMax}${unit}.`,
+    );
+  } else if (predictions.maxTemp - predictions.minTemp >= 15) {
+    addAlert(
+      `🧥 Significant temperature swings are expected today, ranging from ${dispMin}${unit} to ${dispMax}${unit}.`,
+    );
+  } else if (predictions.maxTemp - predictions.minTemp >= 10) {
+    addAlert(
+      `🧥 Moderate temperature swings are expected today, ranging between ${dispMin}${unit} and ${dispMax}${unit}.`,
+    );
+  } else if (predictions.maxTemp - temp >= 12) {
+    addAlert(
+      `📈 Rapid warming is expected today, with temperatures rising to ${dispMax}${unit} around ${formatHour(predictions.maxTempHour)}.`,
+    );
+  } else if (temp - predictions.minTemp >= 12) {
+    addAlert(
+      `📉 Rapid cooling is expected, with temperatures dropping to ${dispMin}${unit} around ${formatHour(predictions.minTempHour)}.`,
+    );
+  }
 
-          if (predictions.rainDuration >= 6)
-            addAlert(`🌧️ Rain is expected to continue for about ${predictions.rainDuration} hours.`);
+  /* =============== FEELS LIKE =============== */
+  if (feelsLike >= 42) {
+    addAlert(
+      `🔥 Dangerously hot heat index is expected. It feels like ${Math.round(displayFeelsLike)}${unit}. Limit strenuous activities.`,
+    );
+  } else if (feelsLike >= 38) {
+    addAlert(
+      `🔥 Hot and muggy conditions are expected today, feeling like ${Math.round(displayFeelsLike)}${unit}.`,
+    );
+  } else if (feelsLike <= -20) {
+    isSevere = true;
+    addAlert(
+      `🧊 Extreme wind chill is expected. It feels like ${Math.round(displayFeelsLike)}${unit} outside. Limit exposure.`,
+    );
+  } else if (feelsLike <= -10) {
+    isInclement = true;
+    addAlert(
+      `🥶 Harsh wind chill is expected. It is freezing outside, feeling like ${Math.round(displayFeelsLike)}${unit}.`,
+    );
+  } else if (Math.abs(feelsLike - temp) >= 5) {
+    let direction = feelsLike > temp ? "warmer" : "colder";
+    addAlert(
+      `🌡️ It feels significantly ${direction} than the actual temperature, around ${Math.round(displayFeelsLike)}${unit}.`,
+    );
+  }
 
-          if (
-            predictions.highPrecipProbHour !== -1 &&
-            predictions.rainStart === -1 &&
-            predictions.snowStart === -1
-          ) {
-            let probTemp =
-              uvData.hourly.temperature_2m[predictions.highPrecipProbHour];
-            let precipType = probTemp <= 0 ? "snow" : "rain";
-            let precipIcon = probTemp <= 0 ? "❄️" : "☔";
-            addAlert(
-              `${precipIcon} There is a ${predictions.maxPrecipProb}% chance of ${precipType} around ${formatHour(predictions.highPrecipProbHour)}.`,
-            );
-          }
+  /* =============== WIND =============== */
+  if (predictions.maxWindSpeed >= 200) {
+    isSevere = true;
+    addAlert(
+      `☠️ Extreme winds are expected in this area. Sustained winds up to ${dispWind} ${currentUnits.wind} are expected. Seek shelter immediately.`,
+    );
+  } else if (predictions.maxWindGust >= 150) {
+    isSevere = true;
+    addAlert(
+      `🌀 Violent storms are expected in this area. Gusts up to ${dispGust} ${currentUnits.wind} are expected. Avoid all travel.`,
+    );
+  } else if (predictions.maxWindGust >= 118) {
+    isSevere = true;
+    addAlert(
+      `🌀 Extreme winds are expected in this area. Gusts up to ${dispGust} ${currentUnits.wind} are expected around ${formatHour(predictions.maxWindGustHour)}.`,
+    );
+  } else if (predictions.maxWindGust >= 89) {
+    isSevere = true;
+    addAlert(
+      `⚠️ Severe storms are expected in this area. Gusts up to ${dispGust} ${currentUnits.wind} are expected around ${formatHour(predictions.maxWindGustHour)}.`,
+    );
+  } else if (predictions.maxWindGust >= 75) {
+    isSevere = true;
+    addAlert(
+      `🌪️ High winds are expected in this area. Gusts reaching ${dispGust} ${currentUnits.wind} could cause damage.`,
+    );
+  } else if (predictions.maxWindSpeed >= 62) {
+    isInclement = true;
+    addAlert(
+      `⚠️ Gale-force winds are expected. Sustained winds reaching ${dispWind} ${currentUnits.wind} are expected around ${formatHour(predictions.maxWindSpeedHour)}.`,
+    );
+  } else if (predictions.maxWindSpeed >= 55) {
+    isInclement = true;
+    addAlert(
+      `⚠️ High winds are expected today, with sustained winds up to ${dispWind} ${currentUnits.wind}.`,
+    );
+  } else if (predictions.maxWindSpeed >= 45 && humidity < 25) {
+    isSevere = true;
+    addAlert(
+      `🌵 Critical fire weather conditions are expected. Dry and windy conditions may produce blowing dust.`,
+    );
+  } else if (predictions.maxWindGust >= 35) {
+    isInclement = true;
+    addAlert(
+      `💨 Strong wind gusts up to ${dispGust} ${currentUnits.wind} are expected today.`,
+    );
+  } else if (predictions.maxWindSpeed >= 20) {
+    addAlert(
+      `🍃 Breezy conditions are expected today, with winds reaching ${dispWind} ${currentUnits.wind}.`,
+    );
+  } else if (predictions.maxWindSpeed >= 15) {
+    addAlert(
+      `🍃 Light breezes are expected today, with winds up to ${dispWind} ${currentUnits.wind} around ${formatHour(predictions.maxWindSpeedHour)}.`,
+    );
+  } else if (
+    predictions.maxWindSpeed < 5 &&
+    predictions.rainStart === -1 &&
+    predictions.snowStart === -1
+  ) {
+    addAlert(
+      `🍃 Calm, stable weather is expected today with negligible winds.`,
+    );
+  }
 
-          if (predictions.rainStop !== -1 && predictions.clearSkiesStart !== -1)
-            addAlert(
-              `🌤️ Brighter weather is expected after the rain moves out around ${formatHour(predictions.rainStop)}.`,
-            );
-          if (predictions.rainStart !== -1 && visibilityVal < 3)
-            addAlert(
-              `🚗 Expect tricky driving conditions with rain and reduced visibility.`,
-            );
+  /* =============== AIR QUALITY =============== */
+  if (aqi > 300) {
+    isSevere = true;
+    addAlert(
+      `☠️ Hazardous air quality is expected in this area (AQI ${aqi}). Minimize all outdoor exposure.`,
+    );
+  } else if (aqi > 200) {
+    isSevere = true;
+    addAlert(
+      `😷 Very unhealthy air quality is expected today (AQI ${aqi}). Strongly advise reducing outdoor activities.`,
+    );
+  } else if (aqi > 150) {
+    isInclement = true;
+    addAlert(
+      `😷 Unhealthy air quality is expected today (AQI ${aqi}). Limit prolonged exertion outdoors.`,
+    );
+  } else if (aqi > 100) {
+    isInclement = true;
+    addAlert(
+      `⚠️ Unhealthy air for sensitive groups is expected today (AQI ${aqi}). Vulnerable individuals should reduce outdoor activities.`,
+    );
+  } else if (aqi <= 50 && aqi > 0 && !isSevere && !isInclement) {
+    addAlert(
+      `🌿 Excellent air quality is expected today (AQI ${aqi}). It is a great day to get some fresh air.`,
+    );
+  }
 
-          /* =============== SNOW & ICE ALERTS =============== */
-          if (predictions.snowStart !== -1) {
-            let timing =
-              predictions.snowStart === currentHourIndex + 1
-                ? "shortly"
-                : `around ${formatHour(predictions.snowStart)}`;
-            addAlert(`❄️ Snow fall is expected to begin ${timing}.`);
-          } else if (predictions.snowStop !== -1) {
-            addAlert(
-              `🌤️ Snow fall may stop around ${formatHour(predictions.snowStop)}.`,
-            );
-          }
+  /* =============== POLLEN =============== */
+  if (
+    !isSevere &&
+    ((grassStatus &&
+      (grassStatus.label === "High" || grassStatus.label === "Very High")) ||
+      (treeStatus &&
+        (treeStatus.label === "High" || treeStatus.label === "Very High")) ||
+      (weedStatus &&
+        (weedStatus.label === "High" || weedStatus.label === "Very High")))
+  ) {
+    addAlert(
+      `🤧 Elevated pollen levels are expected today. Sensitive individuals should exercise caution.`,
+    );
+  }
 
-          if (predictions.snowAccumulation >= 15)
-            addAlert(`❄️ Heavy snow is expected, with enough accumulation to affect travel.`);
-          else if (predictions.snowAccumulation >= 5)
-            addAlert(`☃️ Expect accumulating snow throughout the day.`);
+  /* =============== UV INDEX =============== */
+  if (uvIndex >= 11) {
+    isSevere = true;
+    addAlert(
+      `☠️ Extreme UV levels are expected today (Index ${uvIndex}). Avoid direct sun exposure during peak hours.`,
+    );
+  } else if (uvIndex >= 8) {
+    isSevere = true;
+    addAlert(
+      `☢️ Very high UV levels are expected today (Index ${uvIndex}). Minimize sun exposure during peak hours.`,
+    );
+  } else if (uvIndex >= 6) {
+    isInclement = true;
+    addAlert(
+      `🔆 High UV levels are expected today (Index ${uvIndex}). Sun protection is recommended for prolonged outdoor activities.`,
+    );
+  } else if (uvIndex >= 3) {
+    addAlert(
+      `🕶️ Moderate UV levels are expected today (Index ${uvIndex}). Sun protection is recommended.`,
+    );
+  } else if (
+    uvIndex >= 1 &&
+    uvIndex < 3 &&
+    !isNight &&
+    !isSevere &&
+    !isInclement
+  ) {
+    addAlert(
+      `⛅ Low UV levels are expected today (Index ${uvIndex}). Conditions are generally safe for outdoor activities.`,
+    );
+  }
 
-          if (predictions.maxWind >= 50 && predictions.snowStart !== -1)
-            addAlert(
-              `🌨️ Blowing snow with ${dispWind} ${currentUnits.wind} winds may reduce visibility.`,
-            );
-          if (temp <= -5 && predictions.snowStart !== -1)
-            addAlert(`🧊 Snow may quickly freeze on untreated surfaces.`);
-          if (predictions.iceRisk === true)
-            addAlert(
-              `🧊 Icy patches may develop on roads and sidewalks.`,
-            );
+  /* =============== FOG & VISIBILITY =============== */
+  if (visibilityVal < 0.5) {
+    isSevere = true;
+    addAlert(
+      `☠️ A dense fog emergency is in effect. Visibility is near zero. Suspend non-essential travel.`,
+    );
+  } else if (visibilityVal < 1) {
+    isSevere = true;
+    addAlert(
+      `☠️ Dense fog is severely restricting visibility. Exercise extreme caution.`,
+    );
+  } else if (visibilityVal < 2) {
+    isInclement = true;
+    addAlert(
+      `🚗 Fog is causing moderately restricted visibility. Ensure headlights are on.`,
+    );
+  } else if (visibilityVal < 5) {
+    isInclement = true;
+    addAlert(
+      `🌫️ Patches of fog are expected today, particularly in low-lying areas.`,
+    );
+  } else if (isCurrentlyFoggy) {
+    addAlert(`🌫️ Fog is expected to persist in the area.`);
+  } else if (predictions.fogStart !== -1) {
+    addAlert(
+      `🌫️ Fog is expected to develop around ${formatHour(predictions.fogStart)}.`,
+    );
+  } else if (visibilityVal < 10) {
+    addAlert(
+      `🌫️ A slight haze is expected today, reducing visual range in the distance.`,
+    );
+  } else if (
+    visibilityVal > 15 &&
+    cloudCover < 15 &&
+    !isSevere &&
+    !isInclement
+  ) {
+    addAlert(
+      `📸 Excellent visibility is expected today, offering perfectly clear views.`,
+    );
+  } else if (
+    visibilityVal > 9 &&
+    predictions.rainStart === -1 &&
+    predictions.snowStart === -1 &&
+    predictions.fogStart === -1 &&
+    !isSevere &&
+    !isInclement
+  ) {
+    addAlert(`👁️ Optimal visibility is expected today across the region.`);
+  }
 
-          /* =============== WIND ALERTS =============== */
-          if (predictions.maxWind >= 62 && predictions.maxWind < 75)
-            addAlert(
-              `⚠️ Strong force winds could reach ${dispWind} ${currentUnits.wind} around ${formatHour(predictions.maxWindHour)}.`,
-            );
-          if (predictions.maxWind >= 55 && predictions.maxWind < 75)
-            addAlert(
-              `⚠️ Strong winds up to ${dispWind} ${currentUnits.wind} are expected today.`,
-            );
-          if (predictions.maxWind >= 45 && humidity < 25)
-            addAlert(`🌵 Dry, windy conditions could create blowing dust and reduce visibility.`,
-          );
-          if (predictions.maxWind >= 35 && predictions.maxWind < 55)
-            addAlert(
-              `💨 Gusty winds up to ${dispWind} ${currentUnits.wind} are expected today.`,
-            );
-          if (predictions.maxWind >= 20 && predictions.maxWind < 35)
-            addAlert(
-              `🍃 Expect breezy conditions today, with winds reaching ${dispWind} ${currentUnits.wind}.`,
-            );
-          if (predictions.maxWind >= 15 && predictions.maxWind < 20)
-            addAlert(
-              `🍃 A light breeze is expected around ${formatHour(predictions.maxWindHour)}, with winds up to ${dispWind} ${currentUnits.wind}.`,
-            );
-          if (
-            predictions.maxWind < 5 &&
-            predictions.rainStart === -1 &&
-            predictions.snowStart === -1
-          )
-            addAlert(`🍃 Enjoy a calm day with gentle winds and stable weather.`);
+  /* =============== HUMIDITY =============== */
+  if (humidity > 85 && temp >= 30) {
+    addAlert(`🥵 Oppressive and hot humidity is expected. Stay hydrated.`);
+  } else if (
+    humidity >= 90 &&
+    predictions.rainStart === -1 &&
+    predictions.snowStart === -1
+  ) {
+    addAlert(
+      `💦 Very high humidity is expected today at ${humidity}%. Uncomfortable conditions are expected outdoors.`,
+    );
+  } else if (
+    humidity >= 75 &&
+    humidity < 90 &&
+    predictions.rainStart === -1 &&
+    predictions.snowStart === -1
+  ) {
+    addAlert(
+      `😓 Quite muggy conditions are expected today, with relative humidity around ${humidity}%.`,
+    );
+  } else if (humidity <= 10) {
+    addAlert(
+      `🌵 A critical fire weather outlook is in effect. Relative humidity is critically low at ${humidity}%.`,
+    );
+  } else if (humidity <= 20) {
+    addAlert(
+      `🌵 Very dry air is expected today, with relative humidity dipping to ${humidity}%.`,
+    );
+  } else if (
+    predictions.highHumidityStart !== -1 &&
+    predictions.rainStart === -1
+  ) {
+    addAlert(
+      `💧 Humidity is expected to increase noticeably around ${formatHour(predictions.highHumidityStart)}.`,
+    );
+  }
+  /* =============== PRESSURE TRENDS =============== */
+  let delta3h = 0;
+  let delta6h = 0;
+  let delta12h = 0;
+  let pressureCurrent = pressureHpa;
 
-          /* =============== FOG & VISIBILITY ALERTS =============== */
-          if (visibilityVal < 0.5)
-            addAlert(`☠️ Visibility is near zero in dense fog. Avoid unnecessary travel.`);
-          else if (visibilityVal < 1)
-            addAlert(
-              `☠️ Dense fog has reduced visibility to dangerous levels. Travel only if necessary.`,
-            );
-          else if (visibilityVal < 2)
-            addAlert(`🚗 Fog is reducing visibility. Roads may be harder to see`);
-          else if (visibilityVal < 5)
-            addAlert(`🌫️ Expect occasional patches of fog, especially in low-lying areas.`);
-          else if (visibilityVal < 10)
-            addAlert(`🌫️ A slight haze is expected, especially in the distance.`);
+  if (uvData && uvData.hourly && uvData.hourly.surface_pressure) {
+    if (uvData.hourly.surface_pressure[currentHourIndex]) {
+      pressureCurrent = uvData.hourly.surface_pressure[currentHourIndex];
+    }
+    if (
+      currentHourIndex >= 3 &&
+      uvData.hourly.surface_pressure[currentHourIndex - 3]
+    ) {
+      delta3h =
+        pressureCurrent - uvData.hourly.surface_pressure[currentHourIndex - 3];
+    }
+    if (
+      currentHourIndex >= 6 &&
+      uvData.hourly.surface_pressure[currentHourIndex - 6]
+    ) {
+      delta6h =
+        pressureCurrent - uvData.hourly.surface_pressure[currentHourIndex - 6];
+    }
+    if (
+      currentHourIndex >= 12 &&
+      uvData.hourly.surface_pressure[currentHourIndex - 12]
+    ) {
+      delta12h =
+        pressureCurrent - uvData.hourly.surface_pressure[currentHourIndex - 12];
+    }
+  }
 
-          if (predictions.fogStart !== -1)
-            addAlert(
-              `🌫️ Fog is expected around ${formatHour(predictions.fogStart)}. Visibility could drop quickly.`,
-            );
+  /* =============== PRESSURE ALERTS =============== */
+  if (
+    delta6h <= -4 &&
+    predictions.stormStart !== -1 &&
+    predictions.maxWindSpeed >= 40
+  ) {
+    isSevere = true;
+    addAlert(
+      `🌪️ Rapidly falling pressure coupled with increasing winds suggests an approaching severe weather system.`,
+    );
+  } else if (
+    delta12h <= -5 &&
+    cloudCover >= 70 &&
+    predictions.rainStart !== -1
+  ) {
+    isInclement = true;
+    addAlert(
+      `📉 Steadily falling pressure indicates an approaching front bringing unsettled weather.`,
+    );
+  } else if (delta6h >= 4 && cloudCover <= 30) {
+    addAlert(
+      `📈 Rapidly rising pressure indicates the passage of a front, bringing clearing and stable conditions.`,
+    );
+  } else if (
+    delta12h >= 6 &&
+    predictions.maxWindSpeed < 20 &&
+    cloudCover <= 20
+  ) {
+    addAlert(`☀️ Building high pressure will bring very stable, calm weather.`);
+  } else if (pressureCurrent <= 990 && delta3h <= -2) {
+    isSevere = true;
+    addAlert(
+      `🌪️ An extremely low pressure system (${Math.round(pressureCurrent)} hPa) is deepening. Unstable weather is imminent.`,
+    );
+  } else if (pressureCurrent >= 1040 && delta3h >= 1) {
+    addAlert(
+      `📈 Strong high pressure (${Math.round(pressureCurrent)} hPa) is building. Stable and dry weather is expected.`,
+    );
+  }
 
-          /* =============== DRIVING & TRAVEL ALERTS =============== */
-          if (visibilityVal < 1 && predictions.maxWind >= 30)
-            addAlert(`🚧 Driving could be difficult due to poor visibility and strong winds.`,
-          );
-          if (visibilityVal < 2 && predictions.maxWind >= 30)
-            addAlert(
-              `🚗 Reduced visibility and ${dispWind} ${currentUnits.wind} winds may make driving more difficult.`,
-            );
-          if (predictions.rainStart !== -1 && predictions.maxWind >= 40)
-            addAlert(
-              `🚗 Wet and ${dispWind} ${currentUnits.wind} windy conditions may affect driving.`,
-            );
-          if (predictions.rainStart !== -1 && temp <= 2)
-            addAlert(
-              `🧊 Rain could freeze on contact around ${formatHour(predictions.rainStart)}, creating icy roads.`,
-            );
-          if (predictions.snowStart !== -1 && predictions.maxWind >= 40)
-            addAlert(
-              `🚙 Snow and ${dispWind} ${currentUnits.wind} winds may reduce visibility and affect travel conditions.`,
-            );
-          if (predictions.maxWind >= 70)
-            addAlert(
-              `🚧 Strong ${dispWind} ${currentUnits.wind} winds may affect the vehicles on exposed roads.`,
-            );
+  /* =============== CLOUDS & SKY =============== */
+  if (cloudCover <= 10 && !isNight && !isSevere && !isInclement) {
+    addAlert(
+      `☀️ Clear skies and plenty of sunshine are expected for most of the day.`,
+    );
+  } else if (cloudCover >= 95 && !isNight) {
+    addAlert(
+      `🌑 Completely overcast conditions are expected today, with very little direct sunlight.`,
+    );
+  } else if (
+    predictions.clearSkiesStart !== -1 &&
+    !isNight &&
+    !isSevere &&
+    !isInclement
+  ) {
+    addAlert(
+      `☀️ Cloud cover is expected to dissipate around ${formatHour(predictions.clearSkiesStart)}.`,
+    );
+  } else if (
+    predictions.overcastStart !== -1 &&
+    predictions.rainStart === -1 &&
+    predictions.snowStart === -1
+  ) {
+    addAlert(
+      `☁️ Cloud cover is expected to increase around ${formatHour(predictions.overcastStart)}.`,
+    );
+  } else if (
+    predictions.clearSkiesStart !== -1 &&
+    isNight &&
+    !isSevere &&
+    !isInclement
+  ) {
+    addAlert(
+      `✨ Skies are expected to clear tonight around ${formatHour(predictions.clearSkiesStart)}.`,
+    );
+  } else if (
+    isNight &&
+    cloudCover < 20 &&
+    visibilityVal >= 10 &&
+    !isSevere &&
+    !isInclement
+  ) {
+    addAlert(
+      `🌌 Incredibly clear conditions are expected tonight, perfect for stargazing.`,
+    );
+  } else if (isNight && cloudCover > 80) {
+    addAlert(
+      `☁️ Dense cloud cover is expected to obscure most of the night sky tonight.`,
+    );
+  }
 
-          /* =============== UV ALERTS =============== */
-          if (uvIndex >= 8 && uvIndex < 11)
-            addAlert(
-              `☢️ The sun is especially strong today about ${uvIndex} UV index. Limit time outdoors during peak hours.`,
-            );
-          if (uvIndex >= 6 && uvIndex < 8)
-            addAlert(
-              `🔆 The sun is quite strong today with ${uvIndex} UV index. Protect your skin if you're outdoors.`,
-            );
-          if (uvIndex >= 3 && uvIndex < 6)
-            addAlert(
-              `🕶️ UV levels are moderate today with ${uvIndex} UV index. Consider wearing sunglasses and sunscreen.`,
-            );
-          if (uvIndex >= 1 && uvIndex < 3 && !isNight)
-            addAlert(
-              `⛅ Low UV today, ${uvIndex} UV index. Outdoor conditions are generally comfortable.`,
-            );
-
-          /* =============== HUMIDITY & DEW POINT ALERTS =============== */
-          if (
-            humidity >= 90 &&
-            predictions.rainStart === -1 &&
-            predictions.snowStart === -1
-          )
-            addAlert(
-              `💦 Humidity is very high today with ${humidity}%. It may feel hot, sticky, and uncomfortable outdoors.`,
-            );
-          if (
-            humidity >= 75 &&
-            humidity < 90 &&
-            predictions.rainStart === -1 &&
-            predictions.snowStart === -1
-          )
-            addAlert(`😓 High humid conditions today with ${humidity}%. It may feel warm and muggy outdoors.`);
-          if (humidity <= 10)
-            addAlert(`🌵 The air is extremely dry today with ${humidity}%.`);
-          else if (humidity <= 20)
-            addAlert(
-              `🌵 The air is very dry today with ${humidity}%.`,
-            );
-          else if (humidity <= 30)
-            addAlert(
-              `🏜️ Humidity is on the low side today with ${humidity}%`,
-            );
-
-          if (
-            predictions.highHumidityStart !== -1 &&
-            predictions.rainStart === -1
-          )
-            addAlert(
-              `💧 Humidity is expected to increase around ${formatHour(predictions.highHumidityStart)}.`,
-            );
-
-          if (dewPoint >= 26)
-            addAlert(
-              `🥵 The air will feel extremely humid and uncomfortable today.`,
-            );
-          else if (dewPoint >= 24)
-            addAlert(`🥵 Expect very humid, tropical-like conditions today.`);
-          else if (dewPoint >= 21)
-            addAlert(
-              `😓 Expect very humid, tropical-like conditions today.`,
-            );
-          if (dewPoint <= 0) addAlert(`❄️ The air will feel cool, dry, and crisp today.`);
-
-          /* =============== PRESSURE ALERTS =============== */
-          if (pressureHpa <= 1000 && pressureHpa > 990)
-            addAlert(
-              `📉 Low pressure (${Math.round(pressureHpa)} hPa) developed. Unsettled weather with clouds, wind, or rain is possible.`,
-            );
-          if (pressureHpa >= 1040)
-            addAlert(`📈 Strong high pressure (${Math.round(pressureHpa)} hPa). Expect calm, dry, and generally stable weather.`);
-          else if (pressureHpa >= 1025)
-            addAlert(
-              `📈 High pressure (${Math.round(pressureHpa)} hPa). Conditions are likely to stay calm and mostly clear.`,
-            );
-
-          /* =============== SKY CONDITION & NIGHT ALERTS =============== */
-          if (cloudCover <= 10)
-            addAlert(`☀️ Expect bright, sunny skies for most of the day.`);
-          if (cloudCover >= 30 && cloudCover <= 60)
-            addAlert(`⛅ A pleasant mix of sun and clouds is expected today.`);
-          if (cloudCover >= 80 && cloudCover < 95)
-            addAlert(`☁️ A pleasant mix of sun and clouds is expected today.`);
-          if (cloudCover >= 95)
-            addAlert(`🌑 Thick cloud cover will keep skies gray today.`);
-
-          if (
-            predictions.clearSkiesStart !== -1 &&
-            predictions.rainStart === -1 &&
-            predictions.snowStart === -1
-          )
-            addAlert(
-              `☀️ The sky should clear up around ${formatHour(predictions.clearSkiesStart)}.`,
-            );
-          if (
-            predictions.overcastStart !== -1 &&
-            predictions.rainStart === -1 &&
-            predictions.snowStart === -1
-          )
-            addAlert(
-              `☁️ Cloud cover is expected to increase around ${formatHour(predictions.overcastStart)}.`,
-            );
-
-          if (predictions.clearSkiesStart !== -1 && !isNight)
-            addAlert(`🌅 A colorful sunset may be possible this evening if skies continue to clear.`);
-          if (predictions.clearSkiesStart !== -1 && isNight)
-            addAlert(
-              `✨ Clear skies are expected tonight from around ${formatHour(predictions.clearSkiesStart)}.`,
-            );
-
-          if (isNight && cloudCover < 20 && visibilityVal >= 10)
-            addAlert(`🌌 A clear night ahead should offer great views of the stars.`);
-          else if (isNight && cloudCover < 40 && visibilityVal >= 8)
-            addAlert(`🌌 Conditions look favorable for watching the night sky.`);
-          if (isNight && cloudCover > 80)
-            addAlert(`☁️ Thick clouds may hide much of the night sky tonight.`);
-          if (isNight && predictions.fogStart !== -1)
-            addAlert(
-              `🌫️ Fog may develop overnight around ${formatHour(predictions.fogStart)}.`,
-            );
-          if (!isNight && cloudCover > 90)
-            addAlert(`☁️ Thick cloud cover will block much of the sunshine today.`);
-
-          /* =============== COMFORT & POSITIVE ALERTS =============== */
-          if (aqi <= 50 && aqi > 0)
-            addAlert(
-              `🌿 Air quality is excellent today (AQI ${aqi}). Enjoy the fresh air outdoors.`,
-            );
-          if (visibilityVal > 15 && cloudCover < 15)
-            addAlert(
-              `📸 Excellent visibility should provide stunning views today.`,
-            );
-          else if (
-            visibilityVal > 9 &&
-            predictions.rainStart === -1 &&
-            predictions.snowStart === -1 &&
-            predictions.fogStart === -1
-          )
-            addAlert(`👁️ Excellent visibility is expected across the area today.`);
-
-          if (
-            predictions.maxTemp >= 20 &&
-            predictions.maxTemp <= 27 &&
-            predictions.maxWind < 20 &&
-            predictions.rainStart === -1 &&
-            predictions.snowStart === -1 &&
-            predictions.stormStart === -1
-          )
-            addAlert(
-              `😊 Absolutely perfect weather today! Enjoy the outdoors.`,
-            );
-          if (
-            temp >= 22 &&
-            temp <= 28 &&
-            humidity >= 40 &&
-            humidity <= 60 &&
-            predictions.maxWind < 20
-          )
-            addAlert(`👌 It looks like a beautiful day to enjoy the outdoors.`);
-          if (temp >= 21 && temp <= 27 && humidity >= 40 && humidity <= 60)
-            addAlert(`😊 Enjoy pleasant weather and comfortable temperatures today.`);
-          if (temp >= 18 && temp <= 24 && cloudCover < 40)
-            addAlert(`🌤️ Expect a bright and pleasant day.`);
-          if (temp >= 25 && temp <= 32 && predictions.maxWind >= 20)
-            addAlert(
-              `🍃 Expect warm weather with a cooling breeze throughout the day.`,
-            );
-          if (
-            uvIndex < 3 &&
-            temp >= 20 &&
-            temp <= 26 &&
-            predictions.maxWind < 15
-          )
-            addAlert(`🌤️ The weather should be comfortable for most outdoor activities today.`);
-
-          /* =============== RANDOM ATMOSPHERE & SEASONAL ALERTS =============== */
-          if (cloudCover < 5 && humidity < 40)
-            addAlert(`☀️ Expect crystal-clear skies with comfortably dry air.`);
-          if (humidity > 85 && cloudCover > 90)
-            addAlert(`☁️ Expect overcast skies and humid conditions for much of the day.`);
-          if (predictions.maxTemp >= 35 && predictions.maxWind < 10)
-            addAlert(`🥵 Hot weather and light winds may make it feel uncomfortable outdoors.`);
-          if (predictions.maxTemp <= 10 && predictions.maxWind >= 40)
-            addAlert(
-              `🥶 Cold temperatures and strong winds will make it feel even colder.`,
-            );
-          if (
-            predictions.maxPrecipProb === 0 &&
-            predictions.rainStart === -1 &&
-            predictions.snowStart === -1 &&
-            predictions.stormStart === -1
-          )
-            addAlert(`🌂 No precipitation is expected over the next 12 hours.`);
+  /* =============== COMFORT & POSITIVE ALERTS =============== */
+  if (
+    predictions.maxTemp >= 20 &&
+    predictions.maxTemp <= 27 &&
+    predictions.maxWindSpeed < 20 &&
+    predictions.rainStart === -1 &&
+    predictions.snowStart === -1 &&
+    predictions.stormStart === -1 &&
+    !isSevere &&
+    !isInclement
+  ) {
+    addAlert(
+      `😊 Favorable outdoor conditions are expected today, making it ideal for most outdoor plans.`,
+    );
+  } else if (
+    temp >= 22 &&
+    temp <= 28 &&
+    humidity >= 40 &&
+    humidity <= 60 &&
+    predictions.maxWindSpeed < 20 &&
+    !isSevere &&
+    !isInclement
+  ) {
+    addAlert(
+      `👌 Highly favorable weather is expected today, sitting right in the comfort zone.`,
+    );
+  } else if (
+    predictions.hasValidPrecipProb &&
+    predictions.maxPrecipProb === 0 &&
+    predictions.rainStart === -1 &&
+    predictions.snowStart === -1 &&
+    predictions.stormStart === -1 &&
+    !isSevere &&
+    !isInclement
+  ) {
+    addAlert(`🌂 No precipitation is expected for the next 12 hours.`);
+  }
 
   return smartAlerts;
 }
@@ -832,8 +946,10 @@ function initSmartAlertsCycle(smartAlerts) {
       if (window.alertTimer) clearTimeout(window.alertTimer);
       const alertString = window.currentSmartAlerts[window.currentAlertIndex];
       const spaceIndex = alertString.indexOf(" ");
-      const icon = spaceIndex > -1 ? alertString.substring(0, spaceIndex) : "🔔";
-      const text = spaceIndex > -1 ? alertString.substring(spaceIndex + 1) : alertString;
+      const icon =
+        spaceIndex > -1 ? alertString.substring(0, spaceIndex) : "🔔";
+      const text =
+        spaceIndex > -1 ? alertString.substring(spaceIndex + 1) : alertString;
 
       textEl.style.transition = "opacity 0.3s ease";
       textEl.style.opacity = "0";
@@ -842,7 +958,7 @@ function initSmartAlertsCycle(smartAlerts) {
 
       setTimeout(() => {
         iconEl.innerText = icon;
-        textEl.innerText = text;
+        textEl.innerHTML = text;
         textEl.style.opacity = "1";
         iconEl.style.opacity = "1";
 
@@ -872,7 +988,8 @@ function initSmartAlertsCycle(smartAlerts) {
 
     const nextAlert = (e) => {
       if (e) e.stopPropagation();
-      window.currentAlertIndex = (window.currentAlertIndex + 1) % window.currentSmartAlerts.length;
+      window.currentAlertIndex =
+        (window.currentAlertIndex + 1) % window.currentSmartAlerts.length;
       updateAlertUI();
     };
 
@@ -897,13 +1014,34 @@ function initSmartAlertsCycle(smartAlerts) {
     }
 
     updateAlertUI();
+
+    window.nextAlertFn = nextAlert;
+    if (!window.smartAlertsVisibilityHooked) {
+      window.smartAlertsVisibilityHooked = true;
+      if (window.appVisibility) {
+        window.appVisibility.onPause.push(() => {
+          if (window.alertTimer) clearTimeout(window.alertTimer);
+        });
+        window.appVisibility.onResume.push(() => {
+          if (
+            window.currentSmartAlerts &&
+            window.currentSmartAlerts.length > 1
+          ) {
+            if (window.nextAlertFn) window.nextAlertFn();
+          }
+        });
+      }
+    }
   }
 }
 
 function getSmartAlertsHTML(smartAlerts) {
-  if (!smartAlerts || smartAlerts.length === 0) return '';
-  const toggle = document.getElementById('alerts-toggle');
-  const displayStyle = toggle && !toggle.checked ? 'height: 18px; opacity: 1; margin-top: 5px; margin-bottom: -5px;' : 'margin-top: 0px; margin-bottom: 0px;';
+  if (!smartAlerts || smartAlerts.length === 0) return "";
+  const toggle = document.getElementById("alerts-toggle");
+  const displayStyle =
+    toggle && !toggle.checked
+      ? "height: 18px; opacity: 1; margin-top: 5px; margin-bottom: -5px;"
+      : "margin-top: 0px; margin-bottom: 0px;";
   return `<div id="smart-alert-wrapper" class="smart-alert-wrapper" style="${displayStyle}">
     <div id="smart-alerts-display" class="smart-alert-pill" style="display: flex;">
       <div id="smart-alert-icon" class="smart-alert-icon"></div>
