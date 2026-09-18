@@ -68,8 +68,8 @@
     rgba(255, 255, 255, 0.6),
     rgba(255, 255, 255, 0.5)
   );
-  -webkit-backdrop-filter: blur(0px);
-  backdrop-filter: blur(0px);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
   border: 1px solid rgba(255, 255, 255, 0.3);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
   color: #101010;
@@ -109,121 +109,120 @@
 }
 
 .loader-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        margin: 20px 0;
-        width: 100%;
-      }
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 20px 0;
+  width: 100%;
+}
 
-      .loader-bars {
-        display: flex;
-        gap: 5px;
-        height: 40px;
-        align-items: flex-end;
-      }
+.loader-bars {
+  display: flex;
+  gap: 5px;
+  height: 40px;
+  align-items: flex-end;
+}
 
-      .bar {
-        width: 6px;
-        height: 10px;
-        background: linear-gradient(
-          to top,
-          rgba(255, 255, 255, 0.4),
-          rgba(255, 255, 255, 0.8)
-        );
-        border-radius: 3px;
-        animation: barWave 0.5s infinite alternate;
-        box-shadow: 0 0 5px rgba(255, 255, 255, 0.4);
-      }
+.bar {
+  width: 6px;
+  height: 10px;
+  background: linear-gradient(
+    to top,
+    rgba(255, 255, 255, 0.4),
+    rgba(255, 255, 255, 0.8)
+  );
+  border-radius: 3px;
+  animation: barWave 0.5s infinite alternate;
+  box-shadow: 0 0 5px rgba(255, 255, 255, 0.4);
+}
 
-      .bar:nth-child(1) {
-        animation-delay: 0s;
-      }
-      .bar:nth-child(2) {
-        animation-delay: 0.1s;
-      }
-      .bar:nth-child(3) {
-        animation-delay: 0.2s;
-      }
-      .bar:nth-child(4) {
-        animation-delay: 0.3s;
-      }
-      .bar:nth-child(5) {
-        animation-delay: 0.4s;
-      }
-      .bar:nth-child(6) {
-        animation-delay: 0.5s;
-      }
+.bar:nth-child(1) {
+  animation-delay: 0s;
+}
+.bar:nth-child(2) {
+  animation-delay: 0.1s;
+}
+.bar:nth-child(3) {
+  animation-delay: 0.2s;
+}
+.bar:nth-child(4) {
+  animation-delay: 0.3s;
+}
+.bar:nth-child(5) {
+  animation-delay: 0.4s;
+}
+.bar:nth-child(6) {
+  animation-delay: 0.5s;
+}
 
-      @keyframes barWave {
-        0% {
-          height: 10px;
-          opacity: 0.5;
-        }
-        100% {
-          height: 35px;
-          opacity: 1;
-          box-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
-        }
-      }
+@keyframes barWave {
+  0% {
+    height: 10px;
+    opacity: 0.5;
+  }
+  100% {
+    height: 35px;
+    opacity: 1;
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
+  }
+}
 
-      .loader-text {
-        margin-top: 10px;
-        font-size: 0.8rem;
-        letter-spacing: 2px;
-        color: #fff;
-        font-weight: bold;
-        text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
-        animation: textPulse 1.5s infinite ease-in-out;
-      }
+.loader-text {
+  margin-top: 10px;
+  font-size: 0.8rem;
+  letter-spacing: 2px;
+  color: #fff;
+  font-weight: bold;
+  text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+  animation: textPulse 1.5s infinite ease-in-out;
+}
 
-      @keyframes textPulse {
-        0%,
-        100% {
-          opacity: 0.6;
-        }
-        50% {
-          opacity: 1;
-        }
-      }
+@keyframes textPulse {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
 
 .slow-connection-text {
-        margin-top: 8px;
-        font-size: 0.55rem;
-        color: #ffaa0d;
-        font-weight: bold;
-        letter-spacing: 0.3px;
-        text-shadow:
-          0 0 5px rgba(255, 149, 36, 0.8),
-          0 0 10px rgba(255, 149, 36, 0.6),
-          0 0 15px rgba(255, 149, 36, 0.4);
-        animation: doubleBlink 2s infinite;
-        display: none;
-        text-align: center;
-      }
+  margin-top: 8px;
+  font-size: 0.55rem;
+  color: #ffaa0d;
+  font-weight: bold;
+  letter-spacing: 0.3px;
+  text-shadow:
+    0 0 5px rgba(255, 149, 36, 0.8),
+    0 0 10px rgba(255, 149, 36, 0.6),
+    0 0 15px rgba(255, 149, 36, 0.4);
+  animation: doubleBlink 2s infinite;
+  display: none;
+  text-align: center;
+}
 
-      @keyframes doubleBlink {
-        0%,
-        100% {
-          opacity: 1;
-        }
-        15% {
-          opacity: 0;
-        }
-        30% {
-          opacity: 1;
-        }
-        45% {
-          opacity: 0;
-        }
-        60% {
-          opacity: 1;
-        }
-      }
+@keyframes doubleBlink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  15% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  45% {
+    opacity: 0;
+  }
+  60% {
+    opacity: 1;
+  }
+}
 
 /* ==================== MAIN WEATHER DISPLAY ==================== */
-/* Layout for the current temperature, city name, condition text */
 .result {
   margin-top: 10px;
   display: flex;
@@ -247,14 +246,14 @@
 }
 
 .time-main {
-  font-family: 'LocalMerriweatherSans', 'Merriweather Sans', sans-serif;
+  font-family: "LocalMerriweatherSans", "Merriweather Sans", sans-serif;
   font-size: 0.8rem;
   opacity: 0.8;
   margin-bottom: 6px;
 }
 
 .condition-main {
-  font-family: 'LocalMerriweatherSans', 'Merriweather Sans', sans-serif;
+  font-family: "LocalMerriweatherSans", "Merriweather Sans", sans-serif;
   font-size: 1.2rem;
   text-transform: capitalize;
   margin-bottom: 0;
@@ -274,13 +273,12 @@
 }
 
 .feels-like {
-  font-family: 'LocalMerriweatherSans', 'Merriweather Sans', sans-serif;
+  font-family: "LocalMerriweatherSans", "Merriweather Sans", sans-serif;
   font-size: 0.65rem;
   opacity: 0.8;
   margin-top: 1px;
 }
 
-/* Styling and animations for the main weather icon */
 .weather-icon-container {
   opacity: 0;
   animation: zoomOutIn 0.5s ease-out forwards;
@@ -325,14 +323,13 @@
 }
 
 /* ==================== DETAILS GRID & TABS ==================== */
-/* Styling for the grid of detailed weather metrics */
 .details-grid {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   margin-top: 10px;
   width: 100%;
-  }
+}
 
 @keyframes gridZoomOut {
   0% {
@@ -352,7 +349,7 @@
 }
 
 .details-grid > *:nth-child(1) {
-  animation-delay: 0.10s;
+  animation-delay: 0.1s;
 }
 
 .details-grid > *:nth-child(2) {
@@ -360,7 +357,7 @@
 }
 
 .details-grid > *:nth-child(3) {
-  animation-delay: 0.20s;
+  animation-delay: 0.2s;
 }
 
 .details-grid > *:nth-child(4) {
@@ -368,7 +365,7 @@
 }
 
 .details-grid > *:nth-child(5) {
-  animation-delay: 0.30s;
+  animation-delay: 0.3s;
 }
 
 .details-grid > *:nth-child(6) {
@@ -376,7 +373,7 @@
 }
 
 .details-grid > *:nth-child(7) {
-  animation-delay: 0.40;
+  animation-delay: 0.4s;
 }
 
 .details-grid > *:nth-child(8) {
@@ -384,7 +381,7 @@
 }
 
 .details-grid > *:nth-child(9) {
-  animation-delay: 0.50s;
+  animation-delay: 0.5s;
 }
 
 .details-grid > *:nth-child(10) {
@@ -392,7 +389,7 @@
 }
 
 .details-grid > *:nth-child(11) {
-  animation-delay: 0.60s;
+  animation-delay: 0.6s;
 }
 
 .details-grid > *:nth-child(12) {
@@ -400,7 +397,7 @@
 }
 
 .details-grid > *:nth-child(13) {
-  animation-delay: 0.70s;
+  animation-delay: 0.7s;
 }
 
 .glass-tab {
@@ -409,8 +406,6 @@
     rgba(255, 255, 255, 0.2),
     rgba(255, 255, 255, 0.05)
   );
-  -webkit-backdrop-filter: blur(0px);
-  backdrop-filter: blur(0px);
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-top: 1px solid rgba(255, 255, 255, 0.5);
   border-left: 1px solid rgba(255, 255, 255, 0.5);
@@ -426,81 +421,85 @@
     background 0.2s,
     box-shadow 0.2s;
   box-sizing: border-box;
-  position:relative;
-  overflow:visible;
-  isolation:isolate;
+  position: relative;
+  overflow: visible;
+  isolation: isolate;
 }
 
-.glass-tab::before{
-    content:"";
-    position:absolute;
-    inset:0;
-    border-radius:inherit;
-    pointer-events:none;
-    opacity:0;
-    transition:opacity .25s ease;
-    padding:2px;
-    background:
+.glass-tab::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  padding: 2px;
+  background:
     linear-gradient(
         to right,
         var(--glow-before-main) 0%,
         var(--glow-before-mid) 30%,
         var(--glow-before-soft) 65%,
         transparent 100%
-    ) top / calc(100% - 8px) 2px no-repeat,
+      )
+      top / calc(100% - 8px) 2px no-repeat,
     linear-gradient(
         to bottom,
         var(--glow-before-main) 0%,
         var(--glow-before-mid) 30%,
         var(--glow-before-soft) 65%,
         transparent 100%
-    ) left / 2px calc(100% - 8px) no-repeat;
+      )
+      left / 2px calc(100% - 8px) no-repeat;
 
-    filter:blur(0.8px);
-}
-
-.glass-tab::after{
-    content:"";
-    position:absolute;
-    inset:-3px;
-    border-radius:calc(12px + 12px);
-    pointer-events:none;
-    z-index:-1;
-    opacity:0;
-    transition:opacity .25s ease;
-    background:
-        linear-gradient(
-            to left,
-            transparent 0%,
-            var(--glow-after-soft) 10%,
-            var(--glow-after-mid) 20%,
-            var(--glow-after-main) 30%,
-            var(--glow-after-mid) 45%,
-            var(--glow-after-soft) 80%,
-            transparent 100%
-        ) bottom right/100% 2px no-repeat,
-        linear-gradient(
-            to top,
-            transparent 0%,
-            var(--glow-after-soft) 5%,
-            var(--glow-after-mid) 10%,
-            var(--glow-after-mid) 30%,
-            var(--glow-after-soft) 90%,
-            transparent 100%
-        ) bottom right/2px 100% no-repeat;
-    filter:blur(0.8px);
+  filter: blur(0.8px);
 }
 
-.glass-tab:hover{
-    border-color: var(--glow-border);
-    border-top-color: var(--glow-border-top);
-    border-left-color: var(--glow-border-left);
+.glass-tab::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: calc(12px + 12px);
+  pointer-events: none;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  background:
+    linear-gradient(
+        to left,
+        transparent 0%,
+        var(--glow-after-soft) 10%,
+        var(--glow-after-mid) 20%,
+        var(--glow-after-main) 30%,
+        var(--glow-after-mid) 45%,
+        var(--glow-after-soft) 80%,
+        transparent 100%
+      )
+      bottom right/100% 2px no-repeat,
+    linear-gradient(
+        to top,
+        transparent 0%,
+        var(--glow-after-soft) 5%,
+        var(--glow-after-mid) 10%,
+        var(--glow-after-mid) 30%,
+        var(--glow-after-soft) 90%,
+        transparent 100%
+      )
+      bottom right/2px 100% no-repeat;
+  filter: blur(0.8px);
 }
-.glass-tab:hover::before{
-    opacity:1;
+
+.glass-tab:hover {
+  border-color: var(--glow-border);
+  border-top-color: var(--glow-border-top);
+  border-left-color: var(--glow-border-left);
 }
-.glass-tab:hover::after{
-    opacity:1;
+.glass-tab:hover::before {
+  opacity: 1;
+}
+.glass-tab:hover::after {
+  opacity: 1;
 }
 
 .weather-box.clear-day,
@@ -522,7 +521,17 @@
 .weather-box.rain-snow-day,
 .weather-box.rain-snow-night,
 .weather-box.fog-day,
-.weather-box.fog-night{
+.weather-box.fog-night,
+.weather-box.smoke-day,
+.weather-box.smoke-night,
+.weather-box.haze-day,
+.weather-box.haze-night,
+.weather-box.dust-day,
+.weather-box.dust-night,
+.weather-box.squall-day,
+.weather-box.squall-night,
+.weather-box.tornado-day,
+.weather-box.tornado-night {
   --glow-before-main: rgba(255, 255, 255, 0.9);
   --glow-before-mid: rgba(255, 255, 255, 0.45);
   --glow-before-soft: rgba(255, 255, 255, 0.22);
@@ -544,7 +553,7 @@
 .weather-box.heavy-rain-day,
 .weather-box.heavy-rain-night,
 .weather-box.extreme-rain-day,
-.weather-box.extreme-rain-night{
+.weather-box.extreme-rain-night {
   --glow-before-main: rgba(160, 185, 255, 0.9);
   --glow-before-mid: rgba(160, 185, 255, 0.45);
   --glow-before-soft: rgba(160, 185, 255, 0.22);
@@ -562,7 +571,7 @@
 .weather-box.thunderstorm-rain-day,
 .weather-box.thunderstorm-rain-night,
 .weather-box.severe-thunderstorm-day,
-.weather-box.severe-thunderstorm-night{
+.weather-box.severe-thunderstorm-night {
   --glow-before-main: rgba(255, 220, 100, 0.9);
   --glow-before-mid: rgba(255, 220, 100, 0.45);
   --glow-before-soft: rgba(255, 220, 100, 0.22);
@@ -617,7 +626,7 @@
 .detail-tab-label {
   font-size: 0.65rem;
   font-weight: normal;
-  font-family: 'LocalMerriweatherSans', 'Merriweather Sans', sans-serif;
+  font-family: "LocalMerriweatherSans", "Merriweather Sans", sans-serif;
   margin-bottom: 5px;
 }
 .detail-tab-label.no-margin {
@@ -652,7 +661,8 @@
 .detail-sub-val {
   font-size: 0.65rem;
   font-weight: 600;
-  font-family: 'LocalMerriweatherSans', 'Merriweather Sans', sans-serif;
+  text-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+  font-family: "LocalMerriweatherSans", "Merriweather Sans", sans-serif;
 }
 .detail-sub-val.small {
   font-size: 0.58rem;
@@ -672,7 +682,8 @@
   flex-direction: column;
   align-items: center;
   position: relative;
-  top: -2px;
+  top: -10px;
+  margin-right: 2px;
 }
 .wind-dir-text {
   font-size: 0.75rem;
@@ -681,6 +692,12 @@
 .wind-dir-icon {
   font-size: 1rem;
   margin-top: 2px;
+}
+
+.weather-box.clear-day .wind-dir-icon,
+.weather-box.cloudy-day .wind-dir-icon,
+.weather-box.partly-cloudy-day .wind-dir-icon {
+  filter: invert(1) !important;
 }
 
 .aqi-header-row {
@@ -804,7 +821,15 @@
   margin-bottom: -8px;
 }
 
-body.animations-paused * {
+.weather-box.clear-day .sub-tab-divider,
+.weather-box.cloudy-day .sub-tab-divider,
+.weather-box.partly-cloudy-day .sub-tab-divider {
+  background: rgba(0, 0, 0, 0.2) !important;
+}
+
+body.animations-paused *,
+body.animations-paused *::before,
+body.animations-paused *::after {
   animation-play-state: paused !important;
 }
 
@@ -815,11 +840,24 @@ body.animations-paused * {
   .weather-icon {
     filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.25)) !important;
   }
+  .detail-sub-val {
+    text-shadow: none !important;
+  }
 }
 
 @media (max-width: 480px) {
-  .hourly-content-container,
-  .daily-content-container {
+  #hourly-content-container,
+  #daily-content-container {
     contain: layout paint;
   }
+}
+
+.cached-render .weather-info > *,
+.cached-render .weather-icon-container,
+.cached-render .details-grid > *,
+.cached-render .info-grid > *,
+.cached-render .startup-details-grid,
+.cached-render .startup-details-grid > * {
+  animation: none !important;
+  opacity: 1 !important;
 }
