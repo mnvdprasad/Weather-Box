@@ -10,7 +10,6 @@ function toggleRemember() {
     localStorage.removeItem("savedTimeFormat");
     localStorage.removeItem("hideAlerts");
     localStorage.removeItem("disableAnimations");
-    localStorage.removeItem("autoRefresh");
   } else {
     const cityInput = document.getElementById("city").value.trim();
     if (cityInput) localStorage.setItem("lastCity", cityInput);
@@ -25,7 +24,6 @@ function toggleRemember() {
       "disableAnimations",
       document.getElementById("animations-toggle").checked,
     );
-    localStorage.setItem("autoRefresh", currentRefreshInterval);
   }
 }
 
@@ -59,8 +57,6 @@ function toggleAnimations() {
 
   if (document.getElementById("remember-toggle").checked) {
     localStorage.setItem("disableAnimations", isChecked);
-  } else {
-    localStorage.setItem("disableAnimations", isChecked);
   }
 
   const weatherBox = document.querySelector(".weather-box");
@@ -77,47 +73,31 @@ function toggleAnimations() {
   sessionStorage.removeItem("cachedWeatherCity");
 
   const homeResult = document.getElementById("home-result");
-  const isHomeVisible = homeResult && (homeResult.style.display === "block" || homeResult.style.display === "");
-  const isResultVisible = !isHomeVisible && !!document.querySelector(".details-grid");
+  const isHomeVisible =
+    homeResult &&
+    (homeResult.style.display === "block" || homeResult.style.display === "");
+  const isResultVisible =
+    !isHomeVisible && !!document.querySelector(".details-grid");
   if (isResultVisible) {
     if (document.getElementById("city").value.trim() !== "") {
-      getWeather(true);
+      getWeather(false, null, null, null, null, true);
     } else if (
-      localStorage.getItem("lastLat") &&
-      localStorage.getItem("lastLon")
+      localStorage.getItem("lastLat") !== null &&
+      localStorage.getItem("lastLon") !== null
     ) {
       getWeather(
-        true,
+        false,
         localStorage.getItem("lastLat"),
         localStorage.getItem("lastLon"),
+        null,
+        null,
+        true,
       );
     } else {
-      fetchStartupCityWeather();
+      fetchStartupCityWeather(false, true);
     }
   } else {
-    fetchStartupCityWeather();
-  }
-}
-
-function setAutoRefreshSelect(value) {
-  const minutes = parseInt(value);
-  currentRefreshInterval = minutes;
-
-  if (document.getElementById("remember-toggle").checked) {
-    localStorage.setItem("autoRefresh", minutes);
-  }
-
-  if (weatherInterval) {
-    clearTimeout(weatherInterval);
-  }
-
-  if (minutes > 0) {
-    weatherInterval = setTimeout(() => {
-      const isMainWeatherRendered = !!document.querySelector(".details-grid");
-      if (isMainWeatherRendered) {
-        getWeather(true);
-      }
-    }, currentRefreshInterval * 60000);
+    fetchStartupCityWeather(false, true);
   }
 }
 
@@ -132,26 +112,36 @@ function setTimeFormat(event, format) {
     localStorage.setItem("savedTimeFormat", currentTimeFormat);
   }
 
+  window.preloadedHomeHTML = null;
+  sessionStorage.removeItem("cachedWeatherHTML");
+  sessionStorage.removeItem("cachedWeatherCity");
+
   const homeResult = document.getElementById("home-result");
-  const isHomeVisible = homeResult && (homeResult.style.display === "block" || homeResult.style.display === "");
-  const isResultVisible = !isHomeVisible && !!document.querySelector(".details-grid");
+  const isHomeVisible =
+    homeResult &&
+    (homeResult.style.display === "block" || homeResult.style.display === "");
+  const isResultVisible =
+    !isHomeVisible && !!document.querySelector(".details-grid");
   if (isResultVisible) {
     if (document.getElementById("city").value.trim() !== "") {
-      getWeather(true);
+      getWeather(false, null, null, null, null, true);
     } else if (
-      localStorage.getItem("lastLat") &&
-      localStorage.getItem("lastLon")
+      localStorage.getItem("lastLat") !== null &&
+      localStorage.getItem("lastLon") !== null
     ) {
       getWeather(
-        true,
+        false,
         localStorage.getItem("lastLat"),
         localStorage.getItem("lastLon"),
+        null,
+        null,
+        true,
       );
     } else {
-      fetchStartupCityWeather();
+      fetchStartupCityWeather(false, true);
     }
   } else {
-    fetchStartupCityWeather();
+    fetchStartupCityWeather(false, true);
   }
 }
 
@@ -177,26 +167,36 @@ function setUnit(event, type, value) {
     localStorage.setItem("savedUnits", JSON.stringify(currentUnits));
   }
 
+  window.preloadedHomeHTML = null;
+  sessionStorage.removeItem("cachedWeatherHTML");
+  sessionStorage.removeItem("cachedWeatherCity");
+
   const homeResult = document.getElementById("home-result");
-  const isHomeVisible = homeResult && (homeResult.style.display === "block" || homeResult.style.display === "");
-  const isResultVisible = !isHomeVisible && !!document.querySelector(".details-grid");
+  const isHomeVisible =
+    homeResult &&
+    (homeResult.style.display === "block" || homeResult.style.display === "");
+  const isResultVisible =
+    !isHomeVisible && !!document.querySelector(".details-grid");
   if (isResultVisible) {
     if (document.getElementById("city").value.trim() !== "") {
-      getWeather(true);
+      getWeather(false, null, null, null, null, true);
     } else if (
-      localStorage.getItem("lastLat") &&
-      localStorage.getItem("lastLon")
+      localStorage.getItem("lastLat") !== null &&
+      localStorage.getItem("lastLon") !== null
     ) {
       getWeather(
-        true,
+        false,
         localStorage.getItem("lastLat"),
         localStorage.getItem("lastLon"),
+        null,
+        null,
+        true,
       );
     } else {
-      fetchStartupCityWeather();
+      fetchStartupCityWeather(false, true);
     }
   } else {
-    fetchStartupCityWeather();
+    fetchStartupCityWeather(false, true);
   }
 }
 
@@ -249,8 +249,10 @@ function initSettings() {
     if (lastCity) {
       const cityInput = document.getElementById("city");
       if (cityInput) cityInput.value = lastCity;
-      currentStartupCity = lastCity;
+      window.currentStartupCity = lastCity;
     }
+  } else {
+    if (rememberToggle) rememberToggle.checked = false;
   }
 
   const alertsToggle = document.getElementById("alerts-toggle");
@@ -262,73 +264,9 @@ function initSettings() {
   if (localStorage.getItem("disableAnimations") === "true") {
     if (animationsToggle) {
       animationsToggle.checked = true;
-      toggleAnimations();
+      const weatherBox = document.querySelector(".weather-box");
+      if (weatherBox) weatherBox.classList.add("disable-animations");
     }
-  }
-
-  let savedRefresh = localStorage.getItem("autoRefresh");
-  if (savedRefresh === null) {
-    savedRefresh = "0";
-    if (localStorage.getItem("rememberCity") === "true") {
-      localStorage.setItem("autoRefresh", savedRefresh);
-    }
-  }
-
-  currentRefreshInterval = parseInt(savedRefresh);
-  const refreshText = document.getElementById("refresh-selected-text");
-  const refreshOptions = document.querySelectorAll(
-    "#refresh-custom-select .refreshCustom-option",
-  );
-
-  if (refreshText && refreshOptions.length > 0) {
-    refreshOptions.forEach((opt) => opt.classList.remove("active"));
-    let activeOpt = document.querySelector(
-      `#refresh-custom-select .refreshCustom-option[data-value="${savedRefresh}"]`,
-    );
-    if (!activeOpt) {
-      activeOpt = document.querySelector(
-        `#refresh-custom-select .refreshCustom-option[data-value="0"]`,
-      );
-    }
-    if (activeOpt) {
-      activeOpt.classList.add("active");
-      refreshText.textContent = activeOpt.textContent;
-    }
-  }
-
-  const refreshWrapper = document.getElementById("refresh-custom-select");
-  if (refreshWrapper) {
-    const refreshSelect = refreshWrapper.querySelector(".refresh-select");
-    const refreshTextLocal = document.getElementById("refresh-selected-text");
-
-    if (refreshSelect) {
-      refreshSelect.addEventListener("click", function (e) {
-        e.stopPropagation();
-        refreshSelect.classList.toggle("open");
-      });
-
-      refreshSelect
-        .querySelectorAll(".refreshCustom-option")
-        .forEach((option) => {
-          option.addEventListener("click", function (e) {
-            e.stopPropagation();
-            refreshSelect
-              .querySelectorAll(".refreshCustom-option")
-              .forEach((opt) => opt.classList.remove("active"));
-            this.classList.add("active");
-            if (refreshTextLocal)
-              refreshTextLocal.textContent = this.textContent;
-            refreshSelect.classList.remove("open");
-            setAutoRefreshSelect(this.getAttribute("data-value"));
-          });
-        });
-    }
-
-    document.addEventListener("click", function (e) {
-      if (!refreshWrapper.contains(e.target)) {
-        if (refreshSelect) refreshSelect.classList.remove("open");
-      }
-    });
   }
 
   const rememberToggleEl = document.getElementById("remember-toggle");
@@ -404,17 +342,13 @@ function initSettings() {
       settingsMenu.classList.remove("open");
     }
   });
-
 }
 
 document.addEventListener("DOMContentLoaded", initSettings);
 
 const settingsHTML = `
-      <!-- Radar icon -->
       <i class="bx bx-radar radar-icon" id="radar-btn" title="Radar Map"></i>
-      <!-- Settings cog icon -->
       <i class="bx bx-cog settings-icon" id="settings-btn" title="Settings"></i>
-      <!-- Settings pop-out menu -->
       <div id="settings-menu" class="settings-menu">
         <div class="settings-header">
           <span class="settings-title">Settings</span>
@@ -422,7 +356,7 @@ const settingsHTML = `
         </div>
         <div class="settings-content">
           <div class="settings-glass-box row-layout">
-            <span><i class="ti ti-bookmarks"></i> Remember me</span>
+            <span><i class="ti ti-bookmarks"></i> Remember Settings</span>
             <label class="switch">
               <input type="checkbox" id="remember-toggle" checked />
               <span class="slider"></span>
@@ -442,37 +376,6 @@ const settingsHTML = `
               <span class="slider"></span>
             </label>
           </div>
-          <!-- Dropdown to configure auto-refresh interval -->
-          <div
-            class="settings-glass-box row-layout refresh-box"
-            id="refresh-box-container"
-          >
-            <span class="refresh-label"
-              ><i class="ti ti-refresh"></i> Auto-Refresh</span
-            >
-            <div
-              class="refreshCustom-select-wrapper"
-              id="refresh-custom-select"
-            >
-              <div class="refresh-select">
-                <div class="refreshCustom-select-trigger">
-                  <span id="refresh-selected-text">None</span>
-                  <i class="bx bx-chevron-down"></i>
-                </div>
-                <div class="refreshCustom-select-options">
-                  <div class="refreshCustom-option active" data-value="0">
-                    None
-                  </div>
-                  <div class="refreshCustom-option" data-value="5">5 min</div>
-                  <div class="refreshCustom-option" data-value="10">10 min</div>
-                  <div class="refreshCustom-option" data-value="15">15 min</div>
-                  <div class="refreshCustom-option" data-value="30">30 min</div>
-                  <div class="refreshCustom-option" data-value="60">60 min</div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <!-- Time format toggle (12/24 hour) -->
           <div class="settings-glass-box row-layout" id="time-format-box">
             <span><i class="ti ti-clock-24"></i> Time format</span>
             <div id="time-format-options" class="time-format-toggle">
@@ -482,7 +385,6 @@ const settingsHTML = `
               </div>
             </div>
           </div>
-          <!-- Unit selection panel for temperature, precipitation, wind, visibility, pressure -->
           <div class="settings-glass-box" id="units-format-box">
             <div class="settings-glass-header" style="font-weight: bold;" id="units-toggle-btn">
               <span><i class="ti ti-adjustments-horizontal"></i> Units</span>
