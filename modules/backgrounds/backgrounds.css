@@ -1,5 +1,4 @@
 /* ==================== WEATHER BACKGROUNDS & THEMES ==================== */
-/* Defines background gradients and colors based on the current weather condition */
 .weather-box.clear-day,
 .weather-box.cloudy-day,
 .weather-box.partly-cloudy-day {
@@ -32,7 +31,7 @@
 .weather-box.heavy-snow-day,
 .weather-box.rain-snow-day,
 .weather-box.fog-day {
-  background: linear-gradient(180deg, #767676 0, #424243 29%, #07090C 41%);
+  background: linear-gradient(180deg, #767676 0, #424243 29%, #07090c 41%);
   color: #f9fafb;
 }
 
@@ -55,6 +54,32 @@
 .weather-box.rain-snow-night,
 .weather-box.fog-night {
   background: linear-gradient(180deg, #202020 0, #111111 29%, #010101 41%);
+  color: #f9fafb;
+}
+
+.weather-box.haze-day,
+.weather-box.haze-night {
+  background: linear-gradient(180deg, #8a887a 0, #5c5b52 29%, #2f2e2a 41%);
+  color: #f9fafb;
+}
+
+.weather-box.smoke-day,
+.weather-box.smoke-night {
+  background: linear-gradient(180deg, #59524a 0, #36322d 29%, #141311 41%);
+  color: #f9fafb;
+}
+
+.weather-box.dust-day,
+.weather-box.dust-night {
+  background: linear-gradient(180deg, #967d60 0, #695743 29%, #3a3126 41%);
+  color: #f9fafb;
+}
+
+.weather-box.squall-day,
+.weather-box.squall-night,
+.weather-box.tornado-day,
+.weather-box.tornado-night {
+  background: linear-gradient(180deg, #3d434a 0, #222529 29%, #07090b 41%);
   color: #f9fafb;
 }
 
@@ -128,13 +153,14 @@
   pointer-events: none;
   z-index: 1;
   opacity: 0;
-  
-  
+
   background-repeat: repeat-x;
   animation-play-state: paused;
-  
+
   visibility: hidden;
-  transition: visibility 0s linear 1s, opacity 1s ease;
+  transition:
+    visibility 0s linear 1s,
+    opacity 1s ease;
 }
 
 .cloud-layer.cloud-1 {
@@ -217,7 +243,9 @@
   animation-play-state: paused;
   transform: translate3d(0, 0, 0);
   visibility: hidden;
-  transition: visibility 0s linear 1s, opacity 1s ease;
+  transition:
+    visibility 0s linear 1s,
+    opacity 1s ease;
 }
 
 .overcast-cloud-layer.overcast-1 {
@@ -249,7 +277,8 @@
 .weather-box.moderate-rain-day .overcast-cloud-layer.overcast-3,
 .weather-box.moderate-rain-night .overcast-cloud-layer.overcast-2,
 .weather-box.moderate-rain-night .overcast-cloud-layer.overcast-3 {
-  filter: brightness(0) saturate(100%) invert(94%) sepia(0%) saturate(1088%) hue-rotate(135deg) brightness(95%) contrast(95%);
+  filter: brightness(0) saturate(100%) invert(94%) sepia(0%) saturate(1088%)
+    hue-rotate(135deg) brightness(95%) contrast(95%);
 }
 
 .weather-box.heavy-rain-day .overcast-cloud-layer.overcast-2,
@@ -271,8 +300,9 @@
 .weather-box.severe-thunderstorm-day .overcast-cloud-layer.overcast-2,
 .weather-box.severe-thunderstorm-day .overcast-cloud-layer.overcast-3,
 .weather-box.severe-thunderstorm-night .overcast-cloud-layer.overcast-2,
-.weather-box.severe-thunderstorm-night .overcast-cloud-layer.overcast-3{
-  filter: brightness(0) saturate(100%) invert(66%) sepia(2%) saturate(13%) hue-rotate(314deg) brightness(96%) contrast(90%);
+.weather-box.severe-thunderstorm-night .overcast-cloud-layer.overcast-3 {
+  filter: brightness(0) saturate(100%) invert(66%) sepia(2%) saturate(13%)
+    hue-rotate(314deg) brightness(96%) contrast(90%);
 }
 
 .weather-box.overcast-day .overcast-cloud-layer,
@@ -608,13 +638,15 @@
   0% {
     opacity: 0;
   }
-  4%, 10% {
+  4%,
+  10% {
     opacity: 1;
   }
   15% {
     opacity: 0;
   }
-  20%, 25% {
+  20%,
+  25% {
     opacity: 0.9;
   }
   30% {
@@ -623,7 +655,8 @@
   40% {
     opacity: 0.6;
   }
-  50%, 100% {
+  50%,
+  100% {
     opacity: 0;
   }
 }
@@ -686,13 +719,15 @@
   0% {
     opacity: 0;
   }
-  4%, 10% {
+  4%,
+  10% {
     opacity: 1;
   }
   15% {
     opacity: 0;
   }
-  20%, 25% {
+  20%,
+  25% {
     opacity: 0.8;
   }
   30% {
@@ -701,7 +736,8 @@
   40% {
     opacity: 0.5;
   }
-  50%, 100% {
+  50%,
+  100% {
     opacity: 0;
   }
 }
@@ -718,7 +754,9 @@
   opacity: 0;
   background-repeat: repeat;
   visibility: hidden;
-  transition: visibility 0s linear 1s, opacity 1s ease;
+  transition:
+    visibility 0s linear 1s,
+    opacity 1s ease;
 }
 
 .weather-box .precipitation-wrapper {
@@ -777,7 +815,9 @@
 .weather-box.drizzle-night .rain-layer {
   opacity: 1;
   visibility: visible;
-  transition: visibility 0s linear 0s, opacity 1s ease;
+  transition:
+    visibility 0s linear 0s,
+    opacity 1s ease;
 }
 
 .weather-box.rain-day .rain-layer.rain-1,
@@ -787,7 +827,9 @@
   animation: rainFall1 5s linear infinite;
   opacity: 0.6;
   visibility: visible;
-  transition: visibility 0s linear 0s, opacity 1s ease;
+  transition:
+    visibility 0s linear 0s,
+    opacity 1s ease;
 }
 .weather-box.rain-day .rain-layer.rain-2,
 .weather-box.rain-night .rain-layer.rain-2,
@@ -796,7 +838,9 @@
   animation: rainFall2 8s linear infinite;
   opacity: 0.7;
   visibility: visible;
-  transition: visibility 0s linear 0s, opacity 1s ease;
+  transition:
+    visibility 0s linear 0s,
+    opacity 1s ease;
 }
 .weather-box.rain-day .rain-layer.rain-3,
 .weather-box.rain-night .rain-layer.rain-3,
@@ -805,7 +849,9 @@
   animation: rainFall3 11s linear infinite;
   opacity: 0.9;
   visibility: visible;
-  transition: visibility 0s linear 0s, opacity 1s ease;
+  transition:
+    visibility 0s linear 0s,
+    opacity 1s ease;
 }
 
 .weather-box.moderate-rain-day .rain-layer.rain-1,
@@ -813,21 +859,27 @@
   animation: rainFall1 4s linear infinite;
   opacity: 0.75;
   visibility: visible;
-  transition: visibility 0s linear 0s, opacity 1s ease;
+  transition:
+    visibility 0s linear 0s,
+    opacity 1s ease;
 }
 .weather-box.moderate-rain-day .rain-layer.rain-2,
 .weather-box.moderate-rain-night .rain-layer.rain-2 {
   animation: rainFall2 7s linear infinite;
   opacity: 0.85;
   visibility: visible;
-  transition: visibility 0s linear 0s, opacity 1s ease;
+  transition:
+    visibility 0s linear 0s,
+    opacity 1s ease;
 }
 .weather-box.moderate-rain-day .rain-layer.rain-3,
 .weather-box.moderate-rain-night .rain-layer.rain-3 {
   animation: rainFall3 10s linear infinite;
   opacity: 1;
   visibility: visible;
-  transition: visibility 0s linear 0s, opacity 1s ease;
+  transition:
+    visibility 0s linear 0s,
+    opacity 1s ease;
 }
 
 .weather-box.heavy-rain-day .rain-layer.rain-1,
@@ -835,21 +887,27 @@
   animation: windRainFall1 3s linear infinite;
   opacity: 0.9;
   visibility: visible;
-  transition: visibility 0s linear 0s, opacity 1s ease;
+  transition:
+    visibility 0s linear 0s,
+    opacity 1s ease;
 }
 .weather-box.heavy-rain-day .rain-layer.rain-2,
 .weather-box.heavy-rain-night .rain-layer.rain-2 {
   animation: windRainFall2 6s linear infinite;
   opacity: 1;
   visibility: visible;
-  transition: visibility 0s linear 0s, opacity 1s ease;
+  transition:
+    visibility 0s linear 0s,
+    opacity 1s ease;
 }
 .weather-box.heavy-rain-day .rain-layer.rain-3,
 .weather-box.heavy-rain-night .rain-layer.rain-3 {
   animation: windRainFall3 9s linear infinite;
   opacity: 1;
   visibility: visible;
-  transition: visibility 0s linear 0s, opacity 1s ease;
+  transition:
+    visibility 0s linear 0s,
+    opacity 1s ease;
 }
 
 .weather-box.extreme-rain-day .rain-layer.rain-1,
@@ -859,7 +917,9 @@
   animation: windRainFall1 2s linear infinite;
   opacity: 1;
   visibility: visible;
-  transition: visibility 0s linear 0s, opacity 1s ease;
+  transition:
+    visibility 0s linear 0s,
+    opacity 1s ease;
 }
 .weather-box.extreme-rain-day .rain-layer.rain-2,
 .weather-box.extreme-rain-night .rain-layer.rain-2,
@@ -868,44 +928,54 @@
   animation: windRainFall2 5s linear infinite;
   opacity: 1;
   visibility: visible;
-  transition: visibility 0s linear 0s, opacity 1s ease;
+  transition:
+    visibility 0s linear 0s,
+    opacity 1s ease;
 }
 .weather-box.extreme-rain-day .rain-layer.rain-3,
 .weather-box.extreme-rain-night .rain-layer.rain-3,
 .weather-box.severe-thunderstorm-day .rain-layer.rain-3,
 .weather-box.severe-thunderstorm-night .rain-layer.rain-3 {
-  animation: windRainFall3 s linear infinite;
+  animation: windRainFall3 7s linear infinite;
   opacity: 1;
   visibility: visible;
-  transition: visibility 0s linear 0s, opacity 1s ease;
+  transition:
+    visibility 0s linear 0s,
+    opacity 1s ease;
 }
 
 .weather-box.drizzle-day .rain-layer.rain-1,
 .weather-box.drizzle-night .rain-layer.rain-1 {
-  animation: 
+  animation:
     rainFall1 9s linear infinite,
     drizzleSway1 7s ease-in-out infinite alternate;
   opacity: 0.15;
   visibility: visible;
-  transition: visibility 0s linear 0s, opacity 1s ease;
+  transition:
+    visibility 0s linear 0s,
+    opacity 1s ease;
 }
 .weather-box.drizzle-day .rain-layer.rain-2,
 .weather-box.drizzle-night .rain-layer.rain-2 {
-  animation: 
+  animation:
     rainFall2 14s linear infinite,
     drizzleSway2 9s ease-in-out infinite alternate;
   opacity: 0.4;
   visibility: visible;
-  transition: visibility 0s linear 0s, opacity 1s ease;
+  transition:
+    visibility 0s linear 0s,
+    opacity 1s ease;
 }
 .weather-box.drizzle-day .rain-layer.rain-3,
 .weather-box.drizzle-night .rain-layer.rain-3 {
-  animation: 
+  animation:
     rainFall3 20s linear infinite,
     drizzleSway3 11s ease-in-out infinite alternate;
   opacity: 0.85;
   visibility: visible;
-  transition: visibility 0s linear 0s, opacity 1s ease;
+  transition:
+    visibility 0s linear 0s,
+    opacity 1s ease;
 }
 
 .weather-box.rain-snow-day .rain-layer.rain-1,
@@ -913,34 +983,52 @@
   animation: rainFall1 4s linear infinite;
   opacity: 0.4;
   visibility: visible;
-  transition: visibility 0s linear 0s, opacity 1s ease;
+  transition:
+    visibility 0s linear 0s,
+    opacity 1s ease;
 }
 .weather-box.rain-snow-day .rain-layer.rain-2,
 .weather-box.rain-snow-night .rain-layer.rain-2 {
   animation: rainFall2 6s linear infinite;
   opacity: 0.6;
   visibility: visible;
-  transition: visibility 0s linear 0s, opacity 1s ease;
+  transition:
+    visibility 0s linear 0s,
+    opacity 1s ease;
 }
 .weather-box.rain-snow-day .rain-layer.rain-3,
 .weather-box.rain-snow-night .rain-layer.rain-3 {
   animation: rainFall3 8s linear infinite;
   opacity: 0.8;
   visibility: visible;
-  transition: visibility 0s linear 0s, opacity 1s ease;
+  transition:
+    visibility 0s linear 0s,
+    opacity 1s ease;
 }
 
 @keyframes drizzleSway1 {
-  0% { transform: translate3d(-5px, 0, 0); }
-  100% { transform: translate3d(5px, 0, 0); }
+  0% {
+    transform: translate3d(-5px, 0, 0);
+  }
+  100% {
+    transform: translate3d(5px, 0, 0);
+  }
 }
 @keyframes drizzleSway2 {
-  0% { transform: translate3d(8px, 0, 0); }
-  100% { transform: translate3d(-8px, 0, 0); }
+  0% {
+    transform: translate3d(8px, 0, 0);
+  }
+  100% {
+    transform: translate3d(-8px, 0, 0);
+  }
 }
 @keyframes drizzleSway3 {
-  0% { transform: translate3d(-12px, 0, 0); }
-  100% { transform: translate3d(12px, 0, 0); }
+  0% {
+    transform: translate3d(-12px, 0, 0);
+  }
+  100% {
+    transform: translate3d(12px, 0, 0);
+  }
 }
 
 @keyframes rainFall1 {
@@ -969,16 +1057,28 @@
 }
 
 @keyframes windRainFall1 {
-  0% { translate: 0px 0px; }
-  100% { translate: -200px 400px; }
+  0% {
+    translate: 0px 0px;
+  }
+  100% {
+    translate: -200px 400px;
+  }
 }
 @keyframes windRainFall2 {
-  0% { translate: 0px 0px; }
-  100% { translate: -160px 320px; }
+  0% {
+    translate: 0px 0px;
+  }
+  100% {
+    translate: -160px 320px;
+  }
 }
 @keyframes windRainFall3 {
-  0% { translate: 0px 0px; }
-  100% { translate: -120px 240px; }
+  0% {
+    translate: 0px 0px;
+  }
+  100% {
+    translate: -120px 240px;
+  }
 }
 
 /* Hail: animated falling hail particles */
@@ -1004,7 +1104,9 @@
     transparent 100%
   );
   visibility: hidden;
-  transition: visibility 0s linear 1s, opacity 1s ease;
+  transition:
+    visibility 0s linear 1s,
+    opacity 1s ease;
 }
 
 .hail-layer.hail-1 {
@@ -1026,7 +1128,9 @@
 .weather-box.hail-night .hail-layer {
   opacity: 1;
   visibility: visible;
-  transition: visibility 0s linear 0s, opacity 1s ease;
+  transition:
+    visibility 0s linear 0s,
+    opacity 1s ease;
 }
 
 .weather-box.hail-day .hail-layer.hail-1,
@@ -1034,21 +1138,27 @@
   animation: hailFall1 0.8s linear infinite;
   opacity: 0.7;
   visibility: visible;
-  transition: visibility 0s linear 0s, opacity 1s ease;
+  transition:
+    visibility 0s linear 0s,
+    opacity 1s ease;
 }
 .weather-box.hail-day .hail-layer.hail-2,
 .weather-box.hail-night .hail-layer.hail-2 {
   animation: hailFall2 1s linear infinite;
   opacity: 0.85;
   visibility: visible;
-  transition: visibility 0s linear 0s, opacity 1s ease;
+  transition:
+    visibility 0s linear 0s,
+    opacity 1s ease;
 }
 .weather-box.hail-day .hail-layer.hail-3,
 .weather-box.hail-night .hail-layer.hail-3 {
   animation: hailFall3 1.2s linear infinite;
   opacity: 1;
   visibility: visible;
-  transition: visibility 0s linear 0s, opacity 1s ease;
+  transition:
+    visibility 0s linear 0s,
+    opacity 1s ease;
 }
 
 @keyframes hailFall1 {
@@ -1099,7 +1209,9 @@
     transparent 100%
   );
   visibility: hidden;
-  transition: visibility 0s linear 1s, opacity 1s ease;
+  transition:
+    visibility 0s linear 1s,
+    opacity 1s ease;
 }
 
 .snow-layer.snow-1 {
@@ -1127,17 +1239,21 @@
 .weather-box.rain-snow-night .snow-layer {
   opacity: 1;
   visibility: visible;
-  transition: visibility 0s linear 0s, opacity 1s ease;
+  transition:
+    visibility 0s linear 0s,
+    opacity 1s ease;
 }
 
 .weather-box.snow-day .snow-layer.snow-1,
 .weather-box.snow-night .snow-layer.snow-1 {
-  animation: 
+  animation:
     snowDiagonalFall1 8s linear infinite,
     snowSway1 5s ease-in-out infinite alternate;
   opacity: 0.7;
   visibility: visible;
-  transition: visibility 0s linear 0s, opacity 1s ease;
+  transition:
+    visibility 0s linear 0s,
+    opacity 1s ease;
 }
 .weather-box.snow-day .snow-layer.snow-2,
 .weather-box.snow-night .snow-layer.snow-2 {
@@ -1146,26 +1262,32 @@
     snowSway2 7s ease-in-out infinite alternate;
   opacity: 0.8;
   visibility: visible;
-  transition: visibility 0s linear 0s, opacity 1s ease;
+  transition:
+    visibility 0s linear 0s,
+    opacity 1s ease;
 }
 .weather-box.snow-day .snow-layer.snow-3,
 .weather-box.snow-night .snow-layer.snow-3 {
-  animation: 
+  animation:
     snowDiagonalFall3 15s linear infinite,
     snowSway3 9s ease-in-out infinite alternate;
   opacity: 1;
   visibility: visible;
-  transition: visibility 0s linear 0s, opacity 1s ease;
+  transition:
+    visibility 0s linear 0s,
+    opacity 1s ease;
 }
 
 .weather-box.light-snow-day .snow-layer.snow-1,
 .weather-box.light-snow-night .snow-layer.snow-1 {
-  animation: 
+  animation:
     snowDiagonalFall1 14s linear infinite,
     snowSway1 6s ease-in-out infinite alternate;
   opacity: 0.3;
   visibility: visible;
-  transition: visibility 0s linear 0s, opacity 1s ease;
+  transition:
+    visibility 0s linear 0s,
+    opacity 1s ease;
 }
 .weather-box.light-snow-day .snow-layer.snow-2,
 .weather-box.light-snow-night .snow-layer.snow-2 {
@@ -1174,26 +1296,32 @@
     snowSway2 8s ease-in-out infinite alternate;
   opacity: 0.5;
   visibility: visible;
-  transition: visibility 0s linear 0s, opacity 1s ease;
+  transition:
+    visibility 0s linear 0s,
+    opacity 1s ease;
 }
 .weather-box.light-snow-day .snow-layer.snow-3,
 .weather-box.light-snow-night .snow-layer.snow-3 {
-  animation: 
+  animation:
     snowDiagonalFall3 24s linear infinite,
     snowSway3 10s ease-in-out infinite alternate;
   opacity: 0.8;
   visibility: visible;
-  transition: visibility 0s linear 0s, opacity 1s ease;
+  transition:
+    visibility 0s linear 0s,
+    opacity 1s ease;
 }
 
 .weather-box.heavy-snow-day .snow-layer.snow-1,
 .weather-box.heavy-snow-night .snow-layer.snow-1 {
-  animation: 
+  animation:
     snowDiagonalFall1 4s linear infinite,
     snowSway1 3s ease-in-out infinite alternate;
   opacity: 0.9;
   visibility: visible;
-  transition: visibility 0s linear 0s, opacity 1s ease;
+  transition:
+    visibility 0s linear 0s,
+    opacity 1s ease;
 }
 .weather-box.heavy-snow-day .snow-layer.snow-2,
 .weather-box.heavy-snow-night .snow-layer.snow-2 {
@@ -1202,26 +1330,32 @@
     snowSway2 4s ease-in-out infinite alternate;
   opacity: 1;
   visibility: visible;
-  transition: visibility 0s linear 0s, opacity 1s ease;
+  transition:
+    visibility 0s linear 0s,
+    opacity 1s ease;
 }
 .weather-box.heavy-snow-day .snow-layer.snow-3,
 .weather-box.heavy-snow-night .snow-layer.snow-3 {
-  animation: 
+  animation:
     snowDiagonalFall3 7s linear infinite,
     snowSway3 5s ease-in-out infinite alternate;
   opacity: 1;
   visibility: visible;
-  transition: visibility 0s linear 0s, opacity 1s ease;
+  transition:
+    visibility 0s linear 0s,
+    opacity 1s ease;
 }
 
 .weather-box.rain-snow-day .snow-layer.snow-1,
 .weather-box.rain-snow-night .snow-layer.snow-1 {
-  animation: 
+  animation:
     snowDiagonalFall1 4.5s linear infinite,
     snowSway1 4s ease-in-out infinite alternate;
   opacity: 0.5;
   visibility: visible;
-  transition: visibility 0s linear 0s, opacity 1s ease;
+  transition:
+    visibility 0s linear 0s,
+    opacity 1s ease;
 }
 .weather-box.rain-snow-day .snow-layer.snow-2,
 .weather-box.rain-snow-night .snow-layer.snow-2 {
@@ -1230,16 +1364,20 @@
     snowSway2 5s ease-in-out infinite alternate;
   opacity: 0.7;
   visibility: visible;
-  transition: visibility 0s linear 0s, opacity 1s ease;
+  transition:
+    visibility 0s linear 0s,
+    opacity 1s ease;
 }
 .weather-box.rain-snow-day .snow-layer.snow-3,
 .weather-box.rain-snow-night .snow-layer.snow-3 {
-  animation: 
+  animation:
     snowDiagonalFall3 8s linear infinite,
     snowSway3 7s ease-in-out infinite alternate;
   opacity: 0.8;
   visibility: visible;
-  transition: visibility 0s linear 0s, opacity 1s ease;
+  transition:
+    visibility 0s linear 0s,
+    opacity 1s ease;
 }
 
 @keyframes snowFall1 {
@@ -1317,7 +1455,7 @@
   }
 }
 
-/* Fog: moving, blurred layers simulating mist or fog */
+/* Fog: moving layers simulating mist or fog */
 .weather-box .fog-layer {
   position: absolute;
   top: 0;
@@ -1344,7 +1482,9 @@
   background-repeat: repeat-x;
   animation-play-state: paused;
   visibility: hidden;
-  transition: visibility 0s linear 1s, opacity 1s ease;
+  transition:
+    visibility 0s linear 1s,
+    opacity 1s ease;
 }
 
 .fog-layer.fog-1 {
@@ -1362,14 +1502,26 @@
 }
 
 .weather-box.fog-day .fog-layer.fog-1,
-.weather-box.fog-night .fog-layer.fog-1 {
+.weather-box.fog-night .fog-layer.fog-1,
+.weather-box.haze-day .fog-layer.fog-1,
+.weather-box.haze-night .fog-layer.fog-1,
+.weather-box.smoke-day .fog-layer.fog-1,
+.weather-box.smoke-night .fog-layer.fog-1,
+.weather-box.dust-day .fog-layer.fog-1,
+.weather-box.dust-night .fog-layer.fog-1 {
   opacity: 1;
   visibility: visible;
   animation-play-state: running;
 }
 
 .weather-box.fog-day .fog-layer.fog-2,
-.weather-box.fog-night .fog-layer.fog-2 {
+.weather-box.fog-night .fog-layer.fog-2,
+.weather-box.haze-day .fog-layer.fog-2,
+.weather-box.haze-night .fog-layer.fog-2,
+.weather-box.smoke-day .fog-layer.fog-2,
+.weather-box.smoke-night .fog-layer.fog-2,
+.weather-box.dust-day .fog-layer.fog-2,
+.weather-box.dust-night .fog-layer.fog-2 {
   opacity: 1;
   visibility: visible;
   animation-play-state: running;
@@ -1383,6 +1535,33 @@
 .weather-box.fog-night .fog-layer.fog-1,
 .weather-box.fog-night .fog-layer.fog-2 {
   filter: brightness(0.6);
+}
+
+.weather-box.haze-day .fog-layer.fog-1,
+.weather-box.haze-day .fog-layer.fog-2 {
+  filter: sepia(0.5) hue-rotate(10deg) brightness(0.85);
+}
+.weather-box.haze-night .fog-layer.fog-1,
+.weather-box.haze-night .fog-layer.fog-2 {
+  filter: sepia(0.5) hue-rotate(10deg) brightness(0.5);
+}
+
+.weather-box.smoke-day .fog-layer.fog-1,
+.weather-box.smoke-day .fog-layer.fog-2 {
+  filter: sepia(0.7) hue-rotate(-15deg) brightness(0.7) contrast(1.1);
+}
+.weather-box.smoke-night .fog-layer.fog-1,
+.weather-box.smoke-night .fog-layer.fog-2 {
+  filter: sepia(0.7) hue-rotate(-15deg) brightness(0.4) contrast(1.1);
+}
+
+.weather-box.dust-day .fog-layer.fog-1,
+.weather-box.dust-day .fog-layer.fog-2 {
+  filter: sepia(0.85) hue-rotate(-10deg) brightness(0.9) contrast(1.2);
+}
+.weather-box.dust-night .fog-layer.fog-1,
+.weather-box.dust-night .fog-layer.fog-2 {
+  filter: sepia(0.85) hue-rotate(-10deg) brightness(0.5) contrast(1.2);
 }
 
 @keyframes fogMove1 {
@@ -1410,12 +1589,10 @@
     rgba(255, 255, 255, 0.2),
     rgba(255, 255, 255, 0.05)
   );
-  -webkit-backdrop-filter: blur(0px);
-  backdrop-filter: blur(0px);
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-top: 1px solid rgba(255, 255, 255, 0.5);
   border-left: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: none;
   border-radius: 12px;
   padding: 15px;
   margin-top: 10px;
@@ -1445,7 +1622,12 @@
 /* Forced Dark Theme for Disable Animations Mode - Only in main weather */
 .weather-box.disable-animations[class*="-day"],
 .weather-box.disable-animations[class*="-night"] {
-  background: linear-gradient(180deg, #202020 0, #101010 29%, #010101 41%) !important;
+  background: linear-gradient(
+    180deg,
+    #202020 0,
+    #101010 29%,
+    #010101 41%
+  ) !important;
   color: #f9fafb !important;
 }
 
