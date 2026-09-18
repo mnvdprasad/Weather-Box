@@ -1,6 +1,41 @@
+window.appVisibility = {
+  isHidden: document.hidden,
+  pauseTimestamp: 0,
+  onPause: [],
+  onResume: [],
+  init: function () {
+    document.addEventListener("visibilitychange", () => {
+      this.isHidden = document.hidden;
+      if (this.isHidden) {
+        this.pauseTimestamp = Date.now();
+        this.onPause.forEach((fn) => fn());
+      } else {
+        const elapsed = Date.now() - this.pauseTimestamp;
+        this.onResume.forEach((fn) => fn(elapsed));
+      }
+    });
+  },
+};
+window.appVisibility.init();
+
+window.escapeHTML = function (str) {
+  if (typeof str !== "string") return str;
+  return str.replace(
+    /[&<>'"]/g,
+    (tag) =>
+      ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "'": "&#39;",
+        '"': "&quot;",
+      })[tag] || tag,
+  );
+};
+
 /* Starts an interval that continually updates the displayed local time for the searched city.*/
 function startClock(timezoneOffset) {
-  if (timeInterval) clearInterval(timeInterval);
+  if (timeInterval) clearTimeout(timeInterval);
 
   const update = () => {
     const now = new Date();
@@ -27,10 +62,25 @@ function startClock(timezoneOffset) {
 
     const timeEl = document.getElementById("city-time");
     if (timeEl) timeEl.innerText = timeString;
+
+    const msUntilNextMinute =
+      60000 - (now.getSeconds() * 1000 + now.getMilliseconds());
+    timeInterval = setTimeout(update, msUntilNextMinute);
   };
+  window.clockUpdateFn = update;
   update();
-  timeInterval = setInterval(update, 1000);
 }
+
+window.appVisibility.onPause.push(() => {
+  if (timeInterval) clearTimeout(timeInterval);
+});
+
+window.appVisibility.onResume.push(() => {
+  if (window.clockUpdateFn) {
+    if (timeInterval) clearTimeout(timeInterval);
+    window.clockUpdateFn();
+  }
+});
 
 window.isRadarView = false;
 window.toggleRadarView = function (showRadar, skipPushState = false) {
@@ -45,7 +95,11 @@ window.toggleRadarView = function (showRadar, skipPushState = false) {
       window.pushAppState("#radar");
     } else {
       const cityInput = document.getElementById("city");
-      const city = window.selectedLocation ? window.selectedLocation.name : (cityInput ? cityInput.value : "");
+      const city = window.selectedLocation
+        ? window.selectedLocation.name
+        : cityInput
+          ? cityInput.value
+          : "";
       if (city) {
         window.pushAppState(`#weather/${encodeURIComponent(city)}`);
       } else {
@@ -65,8 +119,14 @@ window.toggleRadarView = function (showRadar, skipPushState = false) {
     if (!radarContainer) {
       const resultDiv = document.getElementById("result");
       if (resultDiv) {
-        const lat = window.selectedLocation ? window.selectedLocation.lat : 0;
-        const lon = window.selectedLocation ? window.selectedLocation.lon : 0;
+        let lat = window.selectedLocation
+          ? window.selectedLocation.lat
+          : parseFloat(localStorage.getItem("lastLat"));
+        let lon = window.selectedLocation
+          ? window.selectedLocation.lon
+          : parseFloat(localStorage.getItem("lastLon"));
+        if (isNaN(lat)) lat = 0;
+        if (isNaN(lon)) lon = 0;
         const radarHtml = `
             <div id="radar-container" style="display: flex; flex-direction: column; width: 100%; align-items: center; margin-top: 10px; z-index: 10; position: relative; padding: 0 5px; box-sizing: border-box;">
                 <div style="display: flex; align-items: center; flex-direction: row; width: 100%; justify-content: space-between; margin-bottom: 5px; color: inherit; font-family: 'LocalMerriweatherSans', 'Merriweather Sans', sans-serif;">
@@ -76,7 +136,7 @@ window.toggleRadarView = function (showRadar, skipPushState = false) {
                     </span>
                 </div>
                 <div class="glass-tab" style="width: 100%; padding: 0; overflow: hidden; border-radius: 10px; display: flex; opacity: 0; animation: zoomOutIn 0.1s ease forwards 0.1s;">
-                    <iframe width="100%" height="410" src="https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=default&metricTemp=default&metricWind=default&zoom=5&overlay=satellite&product=radar&level=surface&lat=${lat}&lon=${lon}&sound=false&play=false&lightning=false" frameborder="0" allow="autoplay 'none'"></iframe>
+                    <iframe width="100%" height="410" src="https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=default&metricTemp=default&metricWind=default&zoom=5&overlay=radar&product=radar&level=surface&lat=${lat}&lon=${lon}&sound=false&play=false&lightning=false" frameborder="0" allow="autoplay 'none'"></iframe>
                 </div>
             </div>
         `;
@@ -95,12 +155,6 @@ window.toggleRadarView = function (showRadar, skipPushState = false) {
       }
     } else {
       radarContainer.style.display = "flex";
-      const iframe = radarContainer.querySelector("iframe");
-      if (iframe) {
-        const lat = window.selectedLocation ? window.selectedLocation.lat : 0;
-        const lon = window.selectedLocation ? window.selectedLocation.lon : 0;
-        iframe.src = `https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=default&metricTemp=default&metricWind=default&zoom=5&overlay=radar&product=radar&level=surface&lat=${lat}&lon=${lon}&sound=false&play=false&lightning=false`;
-      }
     }
   } else {
     if (radarBtn) radarBtn.classList.remove("active");
@@ -213,9 +267,9 @@ function switchHourlySubTab(tab) {
     if (precipContent) precipContent.style.display = "block";
     if (thumb) {
       window.currentScrollbarColor =
-        "linear-gradient(135deg,rgba(100, 180, 255, 0.8), rgba(184, 218, 250, 0.8), rgba(100, 180, 255, 0.8), rgba(184, 218, 250, 0.8)";
+        "linear-gradient(135deg,rgba(100, 180, 255, 0.8), rgba(184, 218, 250, 0.8), rgba(100, 180, 255, 0.8), rgba(184, 218, 250, 0.8))";
       window.currentScrollbarColorActive =
-        "linear-gradient(135deg,rgba(100, 180, 255, 1), rgba(184, 218, 250, 1), rgba(100, 180, 255, 1), rgba(184, 218, 250, 1)";
+        "linear-gradient(135deg,rgba(100, 180, 255, 1), rgba(184, 218, 250, 1), rgba(100, 180, 255, 1), rgba(184, 218, 250, 1))";
       thumb.style.background = window.currentScrollbarColor;
     }
   }
@@ -248,17 +302,26 @@ function switchDailySubTab(tab) {
     if (precipContent) precipContent.style.display = "block";
     if (thumb) {
       window.currentScrollbarColorDaily =
-        "linear-gradient(135deg,rgba(100, 180, 255, 0.8), rgba(184, 218, 250, 0.8), rgba(100, 180, 255, 0.8), rgba(184, 218, 250, 0.8)";
+        "linear-gradient(135deg,rgba(100, 180, 255, 0.8), rgba(184, 218, 250, 0.8), rgba(100, 180, 255, 0.8), rgba(184, 218, 250, 0.8))";
       window.currentScrollbarColorActiveDaily =
-        "linear-gradient(135deg,rgba(100, 180, 255, 1), rgba(184, 218, 250, 1), rgba(100, 180, 255, 1), rgba(184, 218, 250, 1)";
+        "linear-gradient(135deg,rgba(100, 180, 255, 1), rgba(184, 218, 250, 1), rgba(100, 180, 255, 1), rgba(184, 218, 250, 1))";
       thumb.style.background = window.currentScrollbarColorDaily;
     }
   }
 }
 
-/* Adds custom logic to allow click-and-drag horizontal scrolling on the forecast chart containers, including momentum scrolling. */
+window.dragScrollObservers = window.dragScrollObservers || [];
+
+/* Added custom logic to allow click-and-drag horizontal scrolling on the forecast chart containers, including momentum scrolling. */
 function attachDragToScroll() {
+  if (window.dragScrollObservers) {
+    window.dragScrollObservers.forEach((ro) => ro.disconnect());
+  }
+  window.dragScrollObservers = [];
+
   document.querySelectorAll(".hourly-scroll-container").forEach((container) => {
+    if (container.dataset.dragAttached === "true") return;
+    container.dataset.dragAttached = "true";
     let isDown = false;
     let startX;
     let scrollLeft;
@@ -282,6 +345,7 @@ function attachDragToScroll() {
       if (scrollableWidth <= 0) return;
       const scrollPercentage = container.scrollLeft / scrollableWidth;
       const maxThumbLeft = track.clientWidth - thumb.clientWidth;
+      if (maxThumbLeft <= 0) return;
       thumb.style.left = `${scrollPercentage * maxThumbLeft}px`;
     };
 
@@ -301,6 +365,22 @@ function attachDragToScroll() {
         }
         container.addEventListener("scroll", updateThumb, { passive: true });
       }
+
+      const ro = new ResizeObserver(() => {
+        if (!container.isConnected) return;
+        const r = container.clientWidth / container.scrollWidth;
+        if (r >= 1) {
+          track.style.display = "none";
+        } else {
+          if (container.style.display !== "none") {
+            track.style.display = "block";
+            thumb.style.width = `${Math.max(20, r * track.clientWidth)}px`;
+            updateThumb();
+          }
+        }
+      });
+      ro.observe(container);
+      window.dragScrollObservers.push(ro);
 
       thumb.onmousedown = (e) => {
         window.isThumbDown = true;
@@ -325,6 +405,7 @@ function attachDragToScroll() {
         const trackRect = track.getBoundingClientRect();
         const clickX = e.clientX - trackRect.left;
         const maxThumbLeft = track.clientWidth - thumb.clientWidth;
+        if (maxThumbLeft <= 0) return;
         let newLeft = clickX - thumb.clientWidth / 2;
         newLeft = Math.max(0, Math.min(newLeft, maxThumbLeft));
         const scrollableWidth = container.scrollWidth - container.clientWidth;
@@ -359,6 +440,7 @@ function attachDragToScroll() {
 
           const walk = e.pageX - window.thumbStartX;
           const maxThumbLeft = tr.clientWidth - t.clientWidth;
+          if (maxThumbLeft <= 0) return;
           let newLeft = window.thumbStartLeft + walk;
           newLeft = Math.max(0, Math.min(newLeft, maxThumbLeft));
 
@@ -408,79 +490,177 @@ function attachDragToScroll() {
 }
 
 /* The main function responsible for fetching weather data and geocoding */
+function normalizeWeatherData(owmData, aqData, uvData) {
+  const current = {
+    tempC: owmData.main.temp,
+    feelsLikeC: owmData.main.feels_like,
+    windKmh: (owmData.wind?.speed ?? 0) * 3.6,
+    windDirDeg: owmData.wind?.deg ?? null,
+    visibilityKm:
+      owmData.visibility !== undefined && owmData.visibility !== null
+        ? owmData.visibility / 1000
+        : null,
+    rainMm: owmData.rain
+      ? owmData.rain["1h"] !== undefined
+        ? owmData.rain["1h"]
+        : owmData.rain["3h"] !== undefined
+          ? owmData.rain["3h"] / 3
+          : 0
+      : 0,
+    snowMm: owmData.snow
+      ? owmData.snow["1h"] !== undefined
+        ? owmData.snow["1h"]
+        : owmData.snow["3h"] !== undefined
+          ? owmData.snow["3h"] / 3
+          : 0
+      : 0,
+    humidityPercent: owmData.main.humidity,
+    pressureHpa: owmData.main.pressure,
+    cloudCoverPercent: owmData.clouds?.all ?? 0,
+    weatherCode: owmData.weather[0].id,
+    iconCode: owmData.weather[0].icon,
+    description: owmData.weather[0].description,
+    isNight: owmData.weather[0].icon.includes("n"),
+  };
+
+  if (uvData && uvData.current && uvData.current.visibility !== undefined) {
+    current.visibilityKm = uvData.current.visibility / 1000;
+  }
+
+  const hourly = [];
+  if (uvData && uvData.hourly && uvData.hourly.time) {
+    const len = Math.min(uvData.hourly.time.length, 24);
+    for (let i = 0; i < len; i++) {
+      let hPrecip = uvData.hourly.precipitation?.[i] ?? 0;
+      let hRain = uvData.hourly.rain?.[i] ?? 0;
+      let hShowers = uvData.hourly.showers?.[i] ?? 0;
+      let hSnowCm = uvData.hourly.snowfall?.[i] ?? 0;
+
+      let hCode = uvData.hourly.weather_code[i];
+      let isSnowCode = window.isWmoSnow(hCode);
+      let isMixedCode = window.isWmoMixed(hCode);
+      let actualRainMm = hRain + (isSnowCode && !isMixedCode ? 0 : hShowers);
+
+      hourly.push({
+        timeIso: uvData.hourly.time[i],
+        tempC: uvData.hourly.temperature_2m[i],
+        windKmh: uvData.hourly.wind_speed_10m[i],
+        windGustKmh:
+          uvData.hourly.wind_gusts_10m?.[i] || uvData.hourly.wind_speed_10m[i],
+        humidityPercent: uvData.hourly.relative_humidity_2m[i],
+        popPercent: uvData.hourly.precipitation_probability[i],
+        precipMm: hPrecip,
+        rainMm: actualRainMm,
+        snowfallCm: hSnowCm,
+        weatherCode: uvData.hourly.weather_code[i],
+        cape: uvData.hourly.cape?.[i] ?? 0,
+        visibilityKm:
+          uvData.hourly.visibility?.[i] !== undefined &&
+          uvData.hourly.visibility?.[i] !== null
+            ? uvData.hourly.visibility[i] / 1000
+            : null,
+        uvIndex: uvData.hourly.uv_index?.[i] ?? 0,
+      });
+    }
+  }
+
+  return { current, hourly };
+}
+
+window.currentWeatherRequestId = 0;
+window.locationRequestId = 0;
+
 async function getWeather(
   isAutoUpdate = false,
   overrideLat = null,
   overrideLon = null,
   overrideName = null,
   overrideCountry = null,
+  useCache = false,
+  isManualRefresh = false,
+  isSilentRefresh = false,
 ) {
+  window.locationRequestId++;
+  const locBtn = document.getElementById("location-btn");
+  if (locBtn) locBtn.classList.remove("loading-tada");
   let slowConnTimer = null;
 
-  if (startupInterval) clearInterval(startupInterval);
   const cityInput = document.getElementById("city").value.trim();
   const city = cityInput.toLowerCase();
 
-  if (!isAutoUpdate) {
-    if (!navigator.onLine) {
-      const sBox = document.getElementById("suggestions-box");
-      if (sBox) sBox.style.display = "none";
-      showMessage(
-        "No internet connection",
-        "Please check your network settings and try again.",
-      );
-      return;
-    }
+  const requestId = ++window.currentWeatherRequestId;
+  if (window.weatherAbortController) {
+    window.weatherAbortController.abort();
+  }
+  if (typeof window.cancelHomeRequest === "function") {
+    window.cancelHomeRequest();
+  }
+  window.weatherAbortController = new AbortController();
+  const signal = window.weatherAbortController.signal;
 
-    if (cityInput === "" && !overrideName && !overrideLat && !overrideLon) {
-      const sBox = document.getElementById("suggestions-box");
-      if (sBox) sBox.style.display = "none";
-      showMessage(
-        "Please enter a city name",
-        "The search field is empty. Type a location and try again.",
-      );
-      return;
-    }
+  if (!navigator.onLine && !(useCache && window.lastWeatherData)) {
+    const sBox = document.getElementById("suggestions-box");
+    if (sBox) sBox.style.display = "none";
+    showMessage(
+      "No internet connection",
+      "Please check your network settings and try again.",
+    );
+    return;
+  }
+
+  if (cityInput === "" && !overrideName && !overrideLat && !overrideLon) {
+    const sBox = document.getElementById("suggestions-box");
+    if (sBox) sBox.style.display = "none";
+    showMessage(
+      "Please enter a city name",
+      "The search field is empty. Type a location and try again.",
+    );
+    return;
   }
 
   const result = document.getElementById("result");
   const messageBox = document.getElementById("message-box");
   const suggestionsBox = document.getElementById("suggestions-box");
   const homeResult = document.getElementById("home-result");
-  
-  if (result && homeResult && homeResult.style.display !== "none" && !isAutoUpdate) {
+
+  if (
+    result &&
+    homeResult &&
+    homeResult.style.display !== "none" &&
+    !isSilentRefresh
+  ) {
     result.innerHTML = "";
   }
-  
+
   if (result) result.style.display = "block";
 
   if (suggestionsBox) suggestionsBox.style.display = "none";
 
+  const ENABLE_TEST_ANIMATIONS = true;
   if (
+    ENABLE_TEST_ANIMATIONS &&
     typeof handleTestAnimations === "function" &&
     handleTestAnimations(city)
   ) {
     return;
   }
 
-  if (!isAutoUpdate) {
-    const targetCity = overrideName || cityInput;
-    if (targetCity) {
-      const newHash = `#weather/${encodeURIComponent(targetCity)}`;
-      if (window.location.hash !== newHash) {
-        window.history.pushState({ city: targetCity }, "", newHash);
-      }
+  const targetCity = overrideName || cityInput;
+  if (targetCity) {
+    const newHash = `#weather/${encodeURIComponent(targetCity)}`;
+    if (window.location.hash !== newHash) {
+      window.history.pushState({ city: targetCity }, "", newHash);
     }
+  }
 
-    window.currentRenderedCityHash = city;
-    document.getElementById("city").blur();
-    if (weatherInterval) clearTimeout(weatherInterval);
+  window.currentRenderedCityHash = city;
+  document.getElementById("city").blur();
 
-    document.getElementById("current-time").innerText = "";
-    if (timeInterval) clearInterval(timeInterval);
-    messageBox.style.display = "none";
+  document.getElementById("current-time").innerText = "";
+  if (timeInterval) clearTimeout(timeInterval);
+  messageBox.style.display = "none";
 
-    const loaderHtml = `
+  const loaderHtml = `
           <div id="main-loader" class="loader-container" style="position: absolute; top: 10px; left: 0; width: 100%; z-index: 100; display: flex; justify-content: center; align-items: center;">
               <div style="position: relative; padding: 25px 70px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
                   <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.1); -webkit-backdrop-filter: blur(2px) brightness(0.9); backdrop-filter: blur(2px) brightness(0.9); -webkit-mask-image: linear-gradient(to right, transparent, black 20%, black 80%, transparent), linear-gradient(to bottom, transparent, black 5%, black 95%, transparent); -webkit-mask-composite: source-in; mask-image: linear-gradient(to right, transparent, black 20%, black 80%, transparent), linear-gradient(to bottom, transparent, black 5%, black 95%, transparent); mask-composite: intersect; z-index: -1;"></div>
@@ -498,98 +678,163 @@ async function getWeather(
           </div>
       `;
 
-    const existingLoader = document.getElementById("main-loader");
-    if (existingLoader) existingLoader.remove();
+  const existingLoader = document.getElementById("main-loader");
+  if (existingLoader) existingLoader.remove();
+  const existingSubtleLoader = document.getElementById("subtle-loader");
+  if (existingSubtleLoader) existingSubtleLoader.remove();
 
+  if (!isSilentRefresh) {
     if (result.innerHTML.trim() !== "") {
       result.style.position = "relative";
       result.insertAdjacentHTML("beforeend", loaderHtml);
     } else {
       result.innerHTML = loaderHtml;
     }
-
-    slowConnTimer = setTimeout(() => {
-      const el = document.getElementById("slow-conn-msg");
-      if (el) el.style.display = "block";
-    }, 8000);
-  } else if (
-    (cityInput === "" &&
-      (!overrideLat || !overrideLon) &&
-      !window.selectedLocation) ||
-    !navigator.onLine
-  ) {
-    return;
+  } else {
+    if (result.innerHTML.trim() !== "") {
+      result.style.position = "relative";
+      const subtleLoaderHtml = `
+          <div id="subtle-loader" style="position: absolute; top: 1px; right: 1px; z-index: 100; font-size: 0.8rem; font-weight: bold; opacity: 0.7; color: white; text-shadow: 0 0 5px rgba(0,0,0,0.8); display: flex; align-items: center; gap: 3px;">
+            <i class="bx bx-loader-circle bx-spin"></i> Updating...
+          </div>
+        `;
+      result.insertAdjacentHTML("beforeend", subtleLoaderHtml);
+    }
   }
+
+  slowConnTimer = setTimeout(() => {
+    const el = document.getElementById("slow-conn-msg");
+    if (el) el.style.display = "block";
+  }, 8000);
 
   try {
     let hasGeoData = false;
     let geoLat, geoLon, resolvedCityName, resolvedCountry, resolvedFullAddress;
+    let data = null,
+      aqData = null,
+      uvData = null,
+      alertsData = null;
+    let owmReq, aqReq, uvReq, alertsReq;
 
-    if (overrideLat !== null && overrideLon !== null) {
-      geoLat = overrideLat;
-      geoLon = overrideLon;
-      resolvedCityName = overrideName;
-      resolvedCountry = overrideCountry;
-      if (window.selectedLocation && window.selectedLocation.fullAddress) {
-        resolvedFullAddress = window.selectedLocation.fullAddress;
-      } else {
-        resolvedFullAddress = [overrideName, overrideCountry]
-          .filter(Boolean)
-          .join(",<br>");
-      }
-      hasGeoData = true;
-    } else if (isAutoUpdate && window.selectedLocation) {
-      geoLat = window.selectedLocation.lat;
-      geoLon = window.selectedLocation.lon;
-      resolvedCityName = window.selectedLocation.name;
-      resolvedCountry = window.selectedLocation.country;
-      resolvedFullAddress =
-        window.selectedLocation.fullAddress ||
-        [resolvedCityName, resolvedCountry].filter(Boolean).join(",<br>");
-      hasGeoData = true;
+    if (useCache && !window.lastWeatherData) {
+      useCache = false;
     }
 
-    if (!hasGeoData) {
-      // 1. Trying Nominatim (OpenStreetMap) for richest address data
-      try {
-        const nomRes = await fetch(
-          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cityInput)}&format=json&addressdetails=1&limit=1`,
+    if (useCache && window.lastWeatherData) {
+      ({
+        geoLat,
+        geoLon,
+        resolvedCityName,
+        resolvedCountry,
+        resolvedFullAddress,
+        data,
+        aqData,
+        uvData,
+        alertsData,
+      } = window.lastWeatherData);
+      hasGeoData = true;
+    } else {
+      if (overrideLat !== null && overrideLon !== null) {
+        geoLat = overrideLat;
+        geoLon = overrideLon;
+        resolvedCityName = overrideName;
+        resolvedCountry = overrideCountry;
+        if (window.selectedLocation && window.selectedLocation.fullAddress) {
+          resolvedFullAddress = window.selectedLocation.fullAddress;
+        } else {
+          resolvedFullAddress = [overrideName, overrideCountry]
+            .filter(Boolean)
+            .join(",<br>");
+        }
+        hasGeoData = true;
+      }
+
+      if (!hasGeoData) {
+        const coordMatch = cityInput.match(
+          /^([-+]?\d{1,2}(?:\.\d+)?)\s*,\s*([-+]?\d{1,3}(?:\.\d+)?)$/,
         );
-        const nomData = await nomRes.json();
-        if (nomData && nomData.length > 0) {
-          geoLat = nomData[0].lat;
-          geoLon = nomData[0].lon;
+        if (coordMatch) {
+          const lat = parseFloat(coordMatch[1]);
+          const lon = parseFloat(coordMatch[2]);
+          if (lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
+            geoLat = lat;
+            geoLon = lon;
 
-          let cName = nomData[0].name;
-          if (!cName || /\d/.test(cName)) {
-            cName = nomData[0].address
-              ? nomData[0].address.village ||
-                nomData[0].address.town ||
-                nomData[0].address.city ||
-                nomData[0].address.hamlet ||
-                nomData[0].address.suburb
-              : "";
-          }
-          if (!cName && nomData[0].display_name) {
-            const parts = nomData[0].display_name.split(",");
-            const textParts = parts
-              .map((p) => p.trim())
-              .filter((p) => !/\d/.test(p));
-            cName = textParts.length > 0 ? textParts[0] : cityInput;
-          }
-          resolvedCityName = cName;
-          resolvedCountry = nomData[0].address
-            ? (nomData[0].address.country_code || "").toUpperCase()
-            : "";
+            try {
+              const owmGeoRes = await fetch(
+                window.getWeatherEndpoint("geo_reverse", {
+                  lat: geoLat,
+                  lon: geoLon,
+                }),
+                { signal },
+              );
+              const owmGeoData = await owmGeoRes.json();
+              if (requestId !== window.currentWeatherRequestId) return;
+              if (owmGeoData && owmGeoData.length > 0) {
+                const loc = owmGeoData[0];
+                resolvedCityName = loc.name;
+                resolvedCountry = loc.country || "";
 
-          let parts = [cName];
-          if (nomData[0].address) {
-            let addr = nomData[0].address;
-            let mandal = addr.county || addr.municipality || addr.suburb || "";
-            let district = addr.state_district || addr.district || "";
-            let state = addr.state || addr.region || "";
-            let postcode = addr.postcode || "";
-            let country = addr.country || "";
+                let countryFull = resolvedCountry;
+                if (countryFull && countryFull.length === 2) {
+                  try {
+                    const regionNames = new Intl.DisplayNames(["en"], {
+                      type: "region",
+                    });
+                    countryFull =
+                      regionNames.of(countryFull.toUpperCase()) || countryFull;
+                  } catch (e) {}
+                }
+
+                let parts = [resolvedCityName];
+                let state = loc.state || "";
+                if (state && !parts.includes(state)) parts.push(state);
+                if (countryFull && !parts.includes(countryFull))
+                  parts.push(countryFull);
+
+                resolvedFullAddress = parts.filter(Boolean).join(",<br>");
+                hasGeoData = true;
+              } else {
+                resolvedCityName = "Unknown Location";
+                resolvedCountry = "";
+                resolvedFullAddress = `${geoLat}, ${geoLon}`;
+                hasGeoData = true;
+              }
+            } catch (e) {
+              resolvedCityName = "Unknown Location";
+              resolvedCountry = "";
+              resolvedFullAddress = `${geoLat}, ${geoLon}`;
+              hasGeoData = true;
+            }
+          }
+        }
+      }
+
+      if (!hasGeoData) {
+        try {
+          const omRes = await fetch(
+            `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cityInput)}&count=1&language=en&format=json`,
+          );
+          const omData = await omRes.json();
+          if (requestId !== window.currentWeatherRequestId) return;
+          if (omData.results && omData.results.length > 0) {
+            geoLat = omData.results[0].latitude;
+            geoLon = omData.results[0].longitude;
+            resolvedCityName = omData.results[0].name;
+            resolvedCountry =
+              omData.results[0].country_code || omData.results[0].country || "";
+
+            let parts = [resolvedCityName];
+            let mandal =
+              omData.results[0].admin3 || omData.results[0].admin4 || "";
+            let district = omData.results[0].admin2 || "";
+            let state = omData.results[0].admin1 || "";
+            let postcode =
+              omData.results[0].postcodes &&
+              omData.results[0].postcodes.length > 0
+                ? omData.results[0].postcodes[0]
+                : "";
+            let countryFull = omData.results[0].country || "";
 
             if (mandal && !parts.includes(mandal)) parts.push(mandal);
             if (district && !parts.includes(district)) parts.push(district);
@@ -598,77 +843,77 @@ async function getWeather(
             } else if (postcode && !parts.includes(postcode)) {
               parts.push(postcode);
             }
-            if (country && !parts.includes(country)) parts.push(country);
+            if (countryFull && !parts.includes(countryFull))
+              parts.push(countryFull);
+
+            resolvedFullAddress = parts.filter(Boolean).join(",<br>");
+            hasGeoData = true;
           }
-          resolvedFullAddress = parts.filter(Boolean).join(",<br>");
-          hasGeoData = true;
+        } catch (e) {
+          console.warn("Open-Meteo Geo failed", e);
         }
-      } catch (e) {
-        console.warn("Nominatim Geo failed", e);
       }
-    }
 
-    // 2. Fallback to Open-Meteo Geocoding
-    if (!hasGeoData) {
-      try {
-        const omRes = await fetch(
-          `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cityInput)}&count=1&language=en&format=json`,
-        );
-        const omData = await omRes.json();
-        if (omData.results && omData.results.length > 0) {
-          geoLat = omData.results[0].latitude;
-          geoLon = omData.results[0].longitude;
-          resolvedCityName = omData.results[0].name;
-          resolvedCountry =
-            omData.results[0].country_code || omData.results[0].country || "";
+      if (!hasGeoData) {
+        try {
+          let isZip =
+            /^(\d{5}|(?:\d{3,7}|[a-z\d]{2,4}\s?[a-z\d]{3}),\s*[a-z]{2})$/i.test(
+              cityInput.trim(),
+            );
+          if (isZip) {
+            const owmZipRes = await fetch(
+              window.getWeatherEndpoint("geo_zip", {
+                zip: encodeURIComponent(cityInput),
+              }),
+              { signal },
+            );
+            if (owmZipRes.ok) {
+              const owmZipData = await owmZipRes.json();
+              if (requestId !== window.currentWeatherRequestId) return;
+              if (
+                owmZipData &&
+                Number.isFinite(Number(owmZipData.lat)) &&
+                Number.isFinite(Number(owmZipData.lon))
+              ) {
+                geoLat = owmZipData.lat;
+                geoLon = owmZipData.lon;
+                resolvedCityName = owmZipData.name;
+                resolvedCountry = owmZipData.country || "";
 
-          let parts = [resolvedCityName];
-          let mandal =
-            omData.results[0].admin3 || omData.results[0].admin4 || "";
-          let district = omData.results[0].admin2 || "";
-          let state = omData.results[0].admin1 || "";
-          let postcode =
-            omData.results[0].postcodes &&
-            omData.results[0].postcodes.length > 0
-              ? omData.results[0].postcodes[0]
-              : "";
-          let countryFull = omData.results[0].country || "";
+                let countryFull = resolvedCountry;
+                if (countryFull && countryFull.length === 2) {
+                  try {
+                    const regionNames = new Intl.DisplayNames(["en"], {
+                      type: "region",
+                    });
+                    countryFull =
+                      regionNames.of(countryFull.toUpperCase()) || countryFull;
+                  } catch (e) {}
+                }
 
-          if (mandal && !parts.includes(mandal)) parts.push(mandal);
-          if (district && !parts.includes(district)) parts.push(district);
-          if (state && !parts.includes(state)) {
-            parts.push(postcode ? `${state} ${postcode}` : state);
-          } else if (postcode && !parts.includes(postcode)) {
-            parts.push(postcode);
+                resolvedFullAddress = [owmZipData.name, cityInput, countryFull]
+                  .filter(Boolean)
+                  .join(",<br>");
+                hasGeoData = true;
+              }
+            }
           }
-          if (countryFull && !parts.includes(countryFull))
-            parts.push(countryFull);
 
-          resolvedFullAddress = parts.filter(Boolean).join(",<br>");
-          hasGeoData = true;
-        }
-      } catch (e) {
-        console.warn("Open-Meteo Geo failed", e);
-      }
-    }
-
-    if (!hasGeoData) {
-      // 3. Trying OpenWeatherMap Geocoding API
-      try {
-        let isZip = /\d/.test(cityInput);
-        if (isZip) {
-          const owmZipRes = await fetch(
-            window.getWeatherEndpoint("geo_zip", {
-              zip: encodeURIComponent(cityInput),
-            }),
-          );
-          if (owmZipRes.ok) {
-            const owmZipData = await owmZipRes.json();
-            if (owmZipData && owmZipData.lat) {
-              geoLat = owmZipData.lat;
-              geoLon = owmZipData.lon;
-              resolvedCityName = owmZipData.name;
-              resolvedCountry = owmZipData.country || "";
+          if (!hasGeoData) {
+            const owmRes = await fetch(
+              window.getWeatherEndpoint("geo_direct", {
+                q: encodeURIComponent(cityInput),
+                limit: 1,
+              }),
+              { signal },
+            );
+            const owmData = await owmRes.json();
+            if (requestId !== window.currentWeatherRequestId) return;
+            if (owmData && owmData.length > 0) {
+              geoLat = owmData[0].lat;
+              geoLon = owmData[0].lon;
+              resolvedCityName = owmData[0].name;
+              resolvedCountry = owmData[0].country || "";
 
               let countryFull = resolvedCountry;
               if (countryFull && countryFull.length === 2) {
@@ -681,51 +926,19 @@ async function getWeather(
                 } catch (e) {}
               }
 
-              resolvedFullAddress = [owmZipData.name, cityInput, countryFull]
-                .filter(Boolean)
-                .join(",<br>");
+              let parts = [resolvedCityName];
+              let state = owmData[0].state || "";
+              if (state && !parts.includes(state)) parts.push(state);
+              if (countryFull && !parts.includes(countryFull))
+                parts.push(countryFull);
+
+              resolvedFullAddress = parts.filter(Boolean).join(",<br>");
               hasGeoData = true;
             }
           }
+        } catch (e) {
+          console.warn("OWM Geo failed", e);
         }
-
-        if (!hasGeoData) {
-          const owmRes = await fetch(
-            window.getWeatherEndpoint("geo_direct", {
-              q: encodeURIComponent(cityInput),
-              limit: 1,
-            }),
-          );
-          const owmData = await owmRes.json();
-          if (owmData && owmData.length > 0) {
-            geoLat = owmData[0].lat;
-            geoLon = owmData[0].lon;
-            resolvedCityName = owmData[0].name;
-            resolvedCountry = owmData[0].country || "";
-
-            let countryFull = resolvedCountry;
-            if (countryFull && countryFull.length === 2) {
-              try {
-                const regionNames = new Intl.DisplayNames(["en"], {
-                  type: "region",
-                });
-                countryFull =
-                  regionNames.of(countryFull.toUpperCase()) || countryFull;
-              } catch (e) {}
-            }
-
-            let parts = [resolvedCityName];
-            let state = owmData[0].state || "";
-            if (state && !parts.includes(state)) parts.push(state);
-            if (countryFull && !parts.includes(countryFull))
-              parts.push(countryFull);
-
-            resolvedFullAddress = parts.filter(Boolean).join(",<br>");
-            hasGeoData = true;
-          }
-        }
-      } catch (e) {
-        console.warn("OWM Geo failed", e);
       }
     }
 
@@ -741,26 +954,93 @@ async function getWeather(
       fullAddress: resolvedFullAddress,
     };
 
-    // Fetch current weather
-    const url = window.getWeatherEndpoint("weather", {
-      lat: geoLat,
-      lon: geoLon,
-    });
-    const response = await fetch(url);
+    if (!useCache) {
+      let owmUrl = window.getWeatherEndpoint("weather", {
+        lat: geoLat,
+        lon: geoLon,
+      });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      let errMsg = errorData.error || errorData.message || "City not found";
-      if (errMsg.includes("Invalid API key")) {
-        errMsg = "Invalid API key";
+      let aqUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${geoLat}&longitude=${geoLon}&current=us_aqi,pm10,pm2_5,carbon_monoxide,ozone,sulphur_dioxide,nitrogen_dioxide&hourly=grass_pollen,alder_pollen,birch_pollen,ragweed_pollen&timezone=auto`;
+      let uvUrl = `https://api.open-meteo.com/v1/forecast?latitude=${geoLat}&longitude=${geoLon}&current=visibility&daily=uv_index_max,precipitation_probability_max,temperature_2m_max,temperature_2m_min,weather_code&hourly=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,wind_gusts_10m,precipitation_probability,dew_point_2m,is_day,precipitation,rain,showers,snowfall,uv_index,cape,surface_pressure&timezone=auto&forecast_days=8&past_hours=12`;
+
+      let alertsUrl = window.getWeatherEndpoint("alerts", {
+        lat: geoLat,
+        lon: geoLon,
+      });
+
+      const cbBucket = `&_cb=${Math.floor(Date.now() / 300000)}`;
+      owmUrl += cbBucket;
+      aqUrl += cbBucket;
+      uvUrl += cbBucket;
+      alertsUrl += cbBucket;
+
+      if (isManualRefresh) {
+        const cb = `&_t=${Date.now()}`;
+        owmUrl += cb;
+        aqUrl += cb;
+        uvUrl += cb;
+        alertsUrl += cb;
       }
-      throw new Error(errMsg);
+      owmReq = fetch(owmUrl, { signal });
+      aqReq = fetch(aqUrl, { signal }).catch((e) => {
+        if (e.name !== "AbortError") console.warn("AQ fetch failed", e);
+        return { ok: false };
+      });
+      uvReq = fetch(uvUrl, { signal }).catch((e) => {
+        if (e.name !== "AbortError") console.warn("UV fetch failed", e);
+        return { ok: false };
+      });
+      alertsReq = fetch(alertsUrl, { signal }).catch((e) => {
+        if (e.name !== "AbortError") console.warn("Alerts fetch failed", e);
+        return { ok: false };
+      });
+
+      const owmResponse = await owmReq;
+      if (!owmResponse.ok) {
+        const errorData = await owmResponse.json().catch(() => ({}));
+        let errMsg = errorData.error || errorData.message || "City not found";
+        if (errMsg.includes("Invalid API key")) errMsg = "Invalid API key";
+        throw new Error(errMsg);
+      }
+      data = await owmResponse.json();
+
+      try {
+        const [aqRes, uvRes, alertsRes] = await Promise.all([
+          aqReq,
+          uvReq,
+          alertsReq,
+        ]);
+        if (requestId !== window.currentWeatherRequestId) return;
+        if (aqRes && aqRes.ok) {
+          try {
+            aqData = await aqRes.json();
+          } catch (e) {
+            console.warn("AQ parse failed", e);
+          }
+        }
+        if (uvRes && uvRes.ok) {
+          try {
+            uvData = await uvRes.json();
+          } catch (e) {
+            console.warn("UV parse failed", e);
+          }
+        }
+        if (alertsRes && alertsRes.ok) {
+          try {
+            alertsData = await alertsRes.json();
+          } catch (e) {
+            console.warn("Alerts parse failed", e);
+          }
+        }
+      } catch (err) {
+        console.warn("Secondary data fetch/parse failed", err);
+      }
     }
 
-    const data = await response.json();
+    const normalizedWeather = normalizeWeatherData(data, aqData, uvData);
 
-    const temp = data.main.temp;
-    let condition = data.weather[0].description;
+    const temp = normalizedWeather.current.tempC;
+    let condition = normalizedWeather.current.description;
     const cityName = resolvedCityName || data.name;
     const country = data.sys.country || resolvedCountry;
 
@@ -786,7 +1066,9 @@ async function getWeather(
     let finalFullAddress = "";
     if (resolvedFullAddress) {
       let separator = resolvedFullAddress.includes(",<br>") ? ",<br>" : ", ";
-      let addrParts = resolvedFullAddress.split(separator);
+      let addrParts = resolvedFullAddress
+        .split(separator)
+        .map((p) => window.escapeHTML(p));
       if (addrParts.length > 1) {
         finalFullAddress = `<span style="font-size: 0.55rem;">${addrParts[0]}</span>,<br><span style="font-size: 0.35rem; opacity: 0.7;">${addrParts.slice(1).join(",<br>")}</span>`;
       } else {
@@ -794,9 +1076,9 @@ async function getWeather(
       }
     } else {
       finalFullAddress =
-        `<span style="font-size: 0.55rem;">${finalCityName}</span>` +
+        `<span style="font-size: 0.55rem;">${window.escapeHTML(finalCityName)}</span>` +
         (fullCountry
-          ? `,<br><span style="font-size: 0.35rem; opacity: 0.7;">${fullCountry}</span>`
+          ? `,<br><span style="font-size: 0.35rem; opacity: 0.7;">${window.escapeHTML(fullCountry)}</span>`
           : "");
     }
 
@@ -812,10 +1094,10 @@ async function getWeather(
       }
     }
     const timezone = data.timezone;
-    const iconCode = data.weather[0].icon;
-    const humidity = data.main.humidity;
-    const wind = data.wind ? data.wind.speed || 0 : 0;
-    const windDeg = data.wind ? data.wind.deg || 0 : 0;
+    const iconCode = normalizedWeather.current.iconCode;
+    const humidity = normalizedWeather.current.humidityPercent;
+    const wind = normalizedWeather.current.windKmh / 3.6;
+    const windDeg = normalizedWeather.current.windDirDeg;
     const directions = [
       "N",
       "NNE",
@@ -834,18 +1116,96 @@ async function getWeather(
       "NW",
       "NNW",
     ];
-    const windDir = directions[Math.round(windDeg / 22.5) % 16];
+    const windDir =
+      windDeg !== null ? directions[Math.round(windDeg / 22.5) % 16] : null;
+
+    let tempCityTime = new Date(
+      new Date().getTime() +
+        new Date().getTimezoneOffset() * 60000 +
+        1000 * timezone,
+    );
+    let tempLocTimeStr = `${tempCityTime.getFullYear()}-${String(tempCityTime.getMonth() + 1).padStart(2, "0")}-${String(tempCityTime.getDate()).padStart(2, "0")}T${String(tempCityTime.getHours()).padStart(2, "0")}:00`;
+    let tempHourIdx = -1;
+    if (uvData && uvData.hourly && uvData.hourly.time) {
+      tempHourIdx = uvData.hourly.time.indexOf(tempLocTimeStr);
+      if (tempHourIdx === -1) {
+        let minDiff = Infinity;
+        let targetTime = tempCityTime.getTime();
+        for (let i = 0; i < uvData.hourly.time.length; i++) {
+          let diff = Math.abs(
+            new Date(uvData.hourly.time[i]).getTime() - targetTime,
+          );
+          if (diff < minDiff) {
+            minDiff = diff;
+            tempHourIdx = i;
+          }
+        }
+      }
+    }
 
     let precip = 0;
     let precipCondition = "No Precipitation";
     let precipColor = "rgba(255,255,255,0.7)";
+    let precipType = "rain";
+    let precipUnitOverride = null;
 
-    if (
-      data.rain &&
-      (data.rain["1h"] !== undefined || data.rain["3h"] !== undefined)
-    ) {
-      precip =
-        data.rain["1h"] !== undefined ? data.rain["1h"] : data.rain["3h"] / 3;
+    const conditionId = data.weather[0]?.id || 0;
+    const isSleet = conditionId >= 611 && conditionId <= 613;
+    const isRainSnow = conditionId === 615 || conditionId === 616;
+
+    let possibleSnowCm =
+      uvData && uvData.hourly && uvData.hourly.snowfall
+        ? uvData.hourly.snowfall[tempHourIdx]
+        : 0;
+    let maxPrecipMm = Math.max(
+      normalizedWeather.current.rainMm || 0,
+      normalizedWeather.current.snowMm || 0,
+      possibleSnowCm * 10 || 0,
+    );
+
+    if (isRainSnow && maxPrecipMm > 0) {
+      precip = maxPrecipMm;
+      precipType = "rain";
+      let baseStr = "Rain + Snow";
+      if (precip < 0.1) {
+        precipCondition = "No Precipitation";
+        precipColor = "rgba(255,255,255,0.7)";
+      } else if (precip < 2.5) {
+        precipCondition = "Light " + baseStr;
+        precipColor = "#e0f7fa";
+      } else if (precip < 7.6) {
+        precipCondition = "Moderate " + baseStr;
+        precipColor = "#b2ebf2";
+      } else if (precip <= 15) {
+        precipCondition = "Heavy " + baseStr;
+        precipColor = "#80deea";
+      } else {
+        precipCondition = "Very Heavy " + baseStr;
+        precipColor = "#4dd0e1";
+      }
+    } else if (isSleet && maxPrecipMm > 0) {
+      precip = maxPrecipMm;
+      precipType = "rain";
+      let baseStr = "Sleet";
+      if (precip < 0.1) {
+        precipCondition = "No Precipitation";
+        precipColor = "rgba(255,255,255,0.7)";
+      } else if (precip < 2.5) {
+        precipCondition = "Light " + baseStr;
+        precipColor = "#e0f7fa";
+      } else if (precip < 7.6) {
+        precipCondition = "Moderate " + baseStr;
+        precipColor = "#b2ebf2";
+      } else if (precip <= 15) {
+        precipCondition = "Heavy " + baseStr;
+        precipColor = "#80deea";
+      } else {
+        precipCondition = "Very Heavy " + baseStr;
+        precipColor = "#4dd0e1";
+      }
+    } else if (normalizedWeather.current.rainMm > 0) {
+      precip = normalizedWeather.current.rainMm;
+      precipType = "rain";
       if (precip < 0.1) {
         precipCondition = "No Precipitation";
         precipColor = "rgba(255,255,255,0.7)";
@@ -872,31 +1232,54 @@ async function getWeather(
         precipColor = "#b71c1c";
       }
     } else if (
-      data.snow &&
-      (data.snow["1h"] !== undefined || data.snow["3h"] !== undefined)
+      uvData &&
+      uvData.hourly &&
+      uvData.hourly.snowfall &&
+      uvData.hourly.snowfall[tempHourIdx] > 0
     ) {
-      precip =
-        data.snow["1h"] !== undefined ? data.snow["1h"] : data.snow["3h"] / 3;
+      precip = uvData.hourly.snowfall[tempHourIdx];
+      precipType = "snowfall";
+      let baseStr = "Snow";
       if (precip < 0.1) {
         precipCondition = "No Precipitation";
         precipColor = "rgba(255,255,255,0.7)";
       } else if (precip < 1) {
-        precipCondition = "Light Snow";
+        precipCondition = "Light " + baseStr;
         precipColor = "#e0f7fa";
       } else if (precip < 3) {
-        precipCondition = "Moderate Snow";
+        precipCondition = "Moderate " + baseStr;
         precipColor = "#b2ebf2";
       } else if (precip <= 7) {
-        precipCondition = "Heavy Snow";
+        precipCondition = "Heavy " + baseStr;
         precipColor = "#80deea";
       } else {
-        precipCondition = "Very Heavy Snow";
+        precipCondition = "Very Heavy " + baseStr;
+        precipColor = "#4dd0e1";
+      }
+    } else if (normalizedWeather.current.snowMm > 0) {
+      precip = normalizedWeather.current.snowMm;
+      precipType = "snow_liquid";
+      let baseStr = "Snow";
+      if (precip < 0.1) {
+        precipCondition = "No Precipitation";
+        precipColor = "rgba(255,255,255,0.7)";
+      } else if (precip < 1) {
+        precipCondition = "Light " + baseStr;
+        precipColor = "#e0f7fa";
+      } else if (precip < 3) {
+        precipCondition = "Moderate " + baseStr;
+        precipColor = "#b2ebf2";
+      } else if (precip <= 7) {
+        precipCondition = "Heavy " + baseStr;
+        precipColor = "#80deea";
+      } else {
+        precipCondition = "Very Heavy " + baseStr;
         precipColor = "#4dd0e1";
       }
     }
 
-    const feelsLike = Math.round(data.main.feels_like);
-    const cloudCover = data.clouds ? data.clouds.all : 0;
+    const feelsLike = Math.round(normalizedWeather.current.feelsLikeC);
+    const cloudCover = normalizedWeather.current.cloudCoverPercent;
     let pressureTrend = "steady";
 
     let displayTemp =
@@ -907,12 +1290,25 @@ async function getWeather(
 
     let displayPrecip = precip;
     let precipFixed = 1;
-    if (currentUnits.precip === "cm") {
-      displayPrecip = precip / 10;
-      precipFixed = 2;
-    } else if (currentUnits.precip === "in") {
-      displayPrecip = precip / 25.4;
-      precipFixed = 2;
+
+    if (precipType === "snowfall") {
+      if (currentUnits.precip === "in") {
+        displayPrecip = precip / 2.54;
+        precipFixed = 2;
+        precipUnitOverride = "in";
+      } else {
+        displayPrecip = precip;
+        precipFixed = 1;
+        precipUnitOverride = "cm";
+      }
+    } else {
+      if (currentUnits.precip === "cm") {
+        displayPrecip = precip / 10;
+        precipFixed = 2;
+      } else if (currentUnits.precip === "in") {
+        displayPrecip = precip / 25.4;
+        precipFixed = 2;
+      }
     }
     let precipStr = displayPrecip.toFixed(precipFixed);
     if (Number(precipStr) === 0) precipStr = "0";
@@ -923,14 +1319,16 @@ async function getWeather(
     else displayWind = wind * 3.6;
     let windStr = Math.round(displayWind);
 
-    const visibilityVal =
-      (data.visibility !== undefined ? data.visibility : 10000) / 1000;
+    const visibilityVal = normalizedWeather.current.visibilityKm;
     let displayVis = visibilityVal;
-    if (currentUnits.vis === "mi") displayVis = visibilityVal * 0.621371;
-    let visStr = displayVis.toFixed(1);
-    if (Number(visStr) === 0) visStr = "0";
+    let visStr = "N/A";
+    if (visibilityVal !== null && visibilityVal !== undefined) {
+      if (currentUnits.vis === "mi") displayVis = visibilityVal * 0.621371;
+      visStr = displayVis.toFixed(1);
+      if (Number(visStr) === 0) visStr = "0";
+    }
 
-    const pressureHpa = data.main.pressure;
+    const pressureHpa = normalizedWeather.current.pressureHpa;
     let displayPress;
     if (currentUnits.press === "hPa") displayPress = pressureHpa;
     else if (currentUnits.press === "mb") displayPress = pressureHpa;
@@ -958,87 +1356,114 @@ async function getWeather(
       pressColor = "#1565c0";
     }
 
-    const visibility = visibilityVal.toFixed(1);
-    let visColor, visLabel;
-    if (visibilityVal < 0.05) {
-      visLabel = "Critical";
-      visColor = "#6a1b9a";
-    } else if (visibilityVal < 0.2) {
-      visLabel = "Severe";
-      visColor = "#c62828";
-    } else if (visibilityVal < 0.5) {
-      visLabel = "Poor";
-      visColor = "#ef5350";
-    } else if (visibilityVal < 1) {
-      visLabel = "Low";
-      visColor = "#fb8c00";
-    } else if (visibilityVal < 2) {
-      visLabel = "Moderate";
-      visColor = "#ffb300";
-    } else if (visibilityVal < 5) {
-      visLabel = "Fair";
-      visColor = "#fdd835";
-    } else if (visibilityVal < 10) {
-      visLabel = "Good";
-      visColor = "#8bc34a";
-    } else {
-      visLabel = "Excellent";
-      visColor = "#00c853";
+    let visColor = "rgba(255,255,255,0.7)";
+    let visLabel = "Unavailable";
+    if (visibilityVal !== null && visibilityVal !== undefined) {
+      if (visibilityVal < 0.05) {
+        visLabel = "Critical";
+        visColor = "#6a1b9a";
+      } else if (visibilityVal < 0.2) {
+        visLabel = "Severe";
+        visColor = "#c62828";
+      } else if (visibilityVal < 0.5) {
+        visLabel = "Poor";
+        visColor = "#ef5350";
+      } else if (visibilityVal < 1) {
+        visLabel = "Low";
+        visColor = "#fb8c00";
+      } else if (visibilityVal < 2) {
+        visLabel = "Moderate";
+        visColor = "#ffb300";
+      } else if (visibilityVal < 5) {
+        visLabel = "Fair";
+        visColor = "#fdd835";
+      } else if (visibilityVal < 10) {
+        visLabel = "Good";
+        visColor = "#8bc34a";
+      } else {
+        visLabel = "Excellent";
+        visColor = "#00c853";
+      }
     }
 
-    const lat = geoLat;
-    const lon = geoLon;
+    if (
+      uvData &&
+      uvData.current &&
+      uvData.current.visibility !== undefined &&
+      uvData.current.visibility !== null
+    ) {
+      const omVisVal = uvData.current.visibility / 1000;
+      let omDispVis = omVisVal;
+      if (currentUnits.vis === "mi") omDispVis = omVisVal * 0.621371;
+      visStr = omDispVis.toFixed(1);
+      if (Number(visStr) === 0) visStr = "0";
 
-    // Fetch Air Quality data and Hourly/Daily Forecast data from Open-Meteo
-    const [aqResponse, uvResponse] = await Promise.all([
-      fetch(
-        `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi,pm10,pm2_5,carbon_monoxide,ozone,sulphur_dioxide,nitrogen_dioxide&hourly=grass_pollen,alder_pollen,birch_pollen,ragweed_pollen&timezone=auto`,
-      ),
-      fetch(
-        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=uv_index_max,precipitation_probability_max,temperature_2m_max,temperature_2m_min,weather_code&hourly=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,precipitation_probability,dew_point_2m,is_day,rain,snowfall,uv_index&timezone=auto&forecast_days=8`,
-      ),
-    ]);
+      if (omVisVal < 0.05) {
+        visLabel = "Critical";
+        visColor = "#6a1b9a";
+      } else if (omVisVal < 0.2) {
+        visLabel = "Severe";
+        visColor = "#c62828";
+      } else if (omVisVal < 0.5) {
+        visLabel = "Poor";
+        visColor = "#ef5350";
+      } else if (omVisVal < 1) {
+        visLabel = "Low";
+        visColor = "#fb8c00";
+      } else if (omVisVal < 2) {
+        visLabel = "Moderate";
+        visColor = "#ffb300";
+      } else if (omVisVal < 5) {
+        visLabel = "Fair";
+        visColor = "#fdd835";
+      } else if (omVisVal < 10) {
+        visLabel = "Good";
+        visColor = "#8bc34a";
+      } else {
+        visLabel = "Excellent";
+        visColor = "#00c853";
+      }
+    }
 
-    const [aqData, uvData] = await Promise.all([
-      aqResponse.json(),
-      uvResponse.json(),
-    ]);
-
-    // Fetch official government weather alerts Using WeatherAPI.com exclusively for global alerts
+    /* Fetch official government weather alerts Using WeatherAPI.com exclusively for global alerts */
     let officialAlerts = [];
     let astroData = null;
 
     try {
-      const alertsRes = await fetch(
-        window.getWeatherEndpoint("alerts", { lat: lat, lon: lon }),
-      );
-      if (alertsRes.ok) {
-        const alertsData = await alertsRes.json();
-        if (
-          alertsData.forecast &&
-          alertsData.forecast.forecastday &&
-          alertsData.forecast.forecastday.length > 0
-        ) {
-          astroData = alertsData.forecast.forecastday[0].astro;
-        }
-        if (
-          alertsData.alerts &&
-          alertsData.alerts.alert &&
-          alertsData.alerts.alert.length > 0
-        ) {
-          alertsData.alerts.alert.forEach((alertItem) => {
-            officialAlerts.push(alertItem.event);
+      if (
+        alertsData &&
+        alertsData.forecast &&
+        alertsData.forecast.forecastday &&
+        alertsData.forecast.forecastday.length > 0
+      ) {
+        astroData = alertsData.forecast.forecastday[0].astro;
+      }
+      if (
+        alertsData &&
+        alertsData.alerts &&
+        alertsData.alerts.alert &&
+        alertsData.alerts.alert.length > 0
+      ) {
+        alertsData.alerts.alert.forEach((alertItem) => {
+          officialAlerts.push({
+            event: alertItem.event,
+            severity: alertItem.severity || "",
+            urgency: alertItem.urgency || "",
+            certainty: alertItem.certainty || "",
           });
-        }
+        });
       }
     } catch (err) {
-      console.warn("WeatherAPI Alerts fetch failed.", err);
+      console.warn("WeatherAPI Alerts processing failed.", err);
     }
 
     const aqi =
-      aqData && aqData.current && aqData.current.us_aqi !== undefined
+      aqData &&
+      aqData.current &&
+      aqData.current.us_aqi !== undefined &&
+      aqData.current.us_aqi !== null
         ? aqData.current.us_aqi
-        : 0;
+        : null;
 
     const pm10Raw =
       aqData && aqData.current && aqData.current.pm10 !== undefined
@@ -1065,7 +1490,6 @@ async function getWeather(
         ? aqData.current.nitrogen_dioxide
         : "-";
 
-    // Convert pollutant raw values to appropriate units and evaluate severity status from Open-Meteo
     const pm10 = pm10Raw !== "-" ? Math.round(pm10Raw) : "-";
     const pm25 = pm25Raw !== "-" ? Math.round(pm25Raw) : "-";
     const co = coRaw !== "-" ? Math.round(coRaw * 0.873) : "-";
@@ -1091,7 +1515,11 @@ async function getWeather(
     const no2Status = getPollutantStatus(no2, [40, 80, 180, 190, 400]);
 
     let aqiColor, aqiLabel, aqiDarkColor;
-    if (aqi <= 50) {
+    if (aqi === null) {
+      aqiColor = "rgba(255, 255, 255, 0.4)";
+      aqiLabel = "N/A";
+      aqiDarkColor = "rgba(255, 255, 255, 0.2)";
+    } else if (aqi <= 50) {
       aqiColor = "#00e400";
       aqiLabel = "Good";
       aqiDarkColor = "#057d05";
@@ -1117,49 +1545,42 @@ async function getWeather(
       aqiDarkColor = "#200000";
     }
 
-    let tempCityTime = new Date(
-      new Date().getTime() +
-        new Date().getTimezoneOffset() * 60000 +
-        1000 * timezone,
-    );
-    let tempLocTimeStr = `${tempCityTime.getFullYear()}-${String(tempCityTime.getMonth() + 1).padStart(2, "0")}-${String(tempCityTime.getDate()).padStart(2, "0")}T${String(tempCityTime.getHours()).padStart(2, "0")}:00`;
-    let tempHourIdx =
-      uvData && uvData.hourly && uvData.hourly.time
-        ? uvData.hourly.time.indexOf(tempLocTimeStr)
-        : -1;
-    if (tempHourIdx === -1) tempHourIdx = tempCityTime.getHours();
-
     const uvIndex =
       uvData &&
       uvData.hourly &&
       uvData.hourly.uv_index &&
-      uvData.hourly.uv_index[tempHourIdx] !== undefined
+      uvData.hourly.uv_index[tempHourIdx] !== undefined &&
+      uvData.hourly.uv_index[tempHourIdx] !== null
         ? Number(uvData.hourly.uv_index[tempHourIdx].toFixed(1))
-        : 0;
+        : "N/A";
     const precipProb =
       uvData &&
       uvData.hourly &&
       uvData.hourly.precipitation_probability &&
-      uvData.hourly.precipitation_probability[tempHourIdx] !== undefined
+      uvData.hourly.precipitation_probability[tempHourIdx] !== undefined &&
+      uvData.hourly.precipitation_probability[tempHourIdx] !== null
         ? uvData.hourly.precipitation_probability[tempHourIdx]
-        : 0;
+        : "N/A";
 
-    let uvColor, uvLabel;
-    if (uvIndex <= 2) {
-      uvColor = "#00e400";
-      uvLabel = "Low";
-    } else if (uvIndex <= 5) {
-      uvColor = "#ffff00";
-      uvLabel = "Moderate";
-    } else if (uvIndex <= 7) {
-      uvColor = "#ff7e00";
-      uvLabel = "High";
-    } else if (uvIndex <= 10) {
-      uvColor = "#ff0000";
-      uvLabel = "Very High";
-    } else {
-      uvColor = "#54025c";
-      uvLabel = "Extreme";
+    let uvColor = "rgba(255,255,255,0.7)";
+    let uvLabel = "Unavailable";
+    if (uvIndex !== "N/A") {
+      if (uvIndex <= 2) {
+        uvColor = "#00e400";
+        uvLabel = "Low";
+      } else if (uvIndex <= 5) {
+        uvColor = "#ffff00";
+        uvLabel = "Moderate";
+      } else if (uvIndex <= 7) {
+        uvColor = "#ff7e00";
+        uvLabel = "High";
+      } else if (uvIndex <= 10) {
+        uvColor = "#ff0000";
+        uvLabel = "Very High";
+      } else {
+        uvColor = "#54025c";
+        uvLabel = "Extreme";
+      }
     }
 
     let humidityColor, humidityLabel;
@@ -1226,31 +1647,101 @@ async function getWeather(
       windLabel = "Violent Storm";
     } else {
       windColor = "#731203";
-      windLabel = "Hurricane";
+      windLabel = "Extreme Winds";
     }
 
-    // Determine the specific weather condition to set appropriate background classes and icons
     const wId = data.weather[0].id;
     const isNight = iconCode.includes("n");
 
+    let rawDesc = (data.weather[0].description || "").toLowerCase();
+    condition = rawDesc
+      .split(" ")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ");
+
+    condition = condition.replace("Heavy Intensity Rain", "Heavy Rain");
+    condition = condition.replace("Very Heavy Rain", "Downpours");
+    condition = condition.replace("Extreme Rain", "Extreme Downpours");
+    condition = condition.replace(
+      "Light Intensity Shower Rain",
+      "Scattered Showers",
+    );
+    condition = condition.replace(
+      "Heavy Intensity Shower Rain",
+      "Heavy Showers",
+    );
+    condition = condition.replace("Ragged Shower Rain", "Scattered Showers");
+    condition = condition.replace("Shower Rain", "Showers");
+    condition = condition.replace("Light Intensity Drizzle", "Light Drizzle");
+    condition = condition.replace("Heavy Intensity Drizzle", "Heavy Drizzle");
+
+    condition = condition.replace(
+      "Thunderstorm With Light Rain",
+      "Thunderstorms",
+    );
+    condition = condition.replace("Thunderstorm With Rain", "Thunderstorms");
+    condition = condition.replace(
+      "Thunderstorm With Heavy Rain",
+      "Thunderstorms",
+    );
+    condition = condition.replace("Light Thunderstorm", "Thunderstorms");
+    condition = condition.replace("Heavy Thunderstorm", "Severe Thunderstorms");
+    condition = condition.replace(
+      "Ragged Thunderstorm",
+      "Scattered Thunderstorms",
+    );
+    condition = condition.replace(
+      "Thunderstorm With Light Drizzle",
+      "Thunderstorms",
+    );
+    condition = condition.replace("Thunderstorm With Drizzle", "Thunderstorms");
+    condition = condition.replace(
+      "Thunderstorm With Heavy Drizzle",
+      "Thunderstorms",
+    );
+
+    condition = condition.replace("Light Shower Sleet", "Light Sleet");
+    condition = condition.replace("Shower Sleet", "Sleet");
+    condition = condition.replace("Light Rain And Snow", "Rain and Snow");
+    condition = condition.replace("Rain And Snow", "Rain and Snow");
+
+    condition = condition.replace("Sand/ Dust Whirls", "Dust Whirls");
+    condition = condition.replace("Volcanic Ash", "Volcanic Ash");
+
     if (wId === 800) {
       condition = isNight ? "Clear Sky" : "Sunny";
-    } else if (wId === 801) {
-      condition = "Few Clouds";
-    } else if (wId === 802) {
-      condition = isNight ? "Partly Cloudy" : "Partly Sunny";
-    } else if (wId === 803) {
-      condition = "Mostly Cloudy";
     } else if (wId === 804) {
       condition = "Overcast";
     } else if (wId === 701) {
       condition = "Mist";
+    } else if (wId === 711) {
+      condition = "Smoke";
     } else if (wId === 721) {
-      condition = isNight ? "Haze Night" : "Haze";
+      condition = "Haze";
+    } else if (wId === 731 || wId === 761) {
+      condition = "Dust";
     } else if (wId === 741) {
       condition = "Fog";
-    } else if (wId === 781) {
+    } else if (wId === 751) {
+      condition = "Sand";
+    } else if (wId === 762) {
+      condition = "Volcanic Ash";
+    } else if (wId === 771) {
+      condition = "Squall";
+    } else if (wId === 781 || wId === 900) {
       condition = "Tornado";
+    } else if (wId === 901) {
+      condition = "Tropical Storm";
+    } else if (wId === 902) {
+      condition = "Hurricane";
+    } else if (wId === 903) {
+      condition = "Cold";
+    } else if (wId === 904) {
+      condition = "Hot";
+    } else if (wId === 905) {
+      condition = "Windy";
+    } else if (wId === 906) {
+      condition = "Hail";
     }
 
     let weatherClass = "";
@@ -1280,7 +1771,10 @@ async function getWeather(
       weatherClass = isNight ? "drizzle-night" : "drizzle-day";
       amIcon = "drizzle";
     } else if (wId >= 500 && wId < 600) {
-      if (wId === 501) {
+      if (wId === 511) {
+        weatherClass = isNight ? "rain-snow-night" : "rain-snow-day";
+        amIcon = "sleet";
+      } else if (wId === 501) {
         weatherClass = isNight ? "moderate-rain-night" : "moderate-rain-day";
         amIcon = "rain";
       } else if (wId === 502 || wId === 503 || wId === 522) {
@@ -1308,7 +1802,22 @@ async function getWeather(
         amIcon = "snow";
       }
     } else if (wId >= 700 && wId < 800) {
-      weatherClass = isNight ? "fog-night" : "fog-day";
+      if (wId === 701 || wId === 741) {
+        weatherClass = isNight ? "fog-night" : "fog-day";
+      } else if (wId === 711) {
+        weatherClass = isNight ? "smoke-night" : "smoke-day";
+      } else if (wId === 721) {
+        weatherClass = isNight ? "haze-night" : "haze-day";
+      } else if (wId === 731 || wId === 751 || wId === 761 || wId === 762) {
+        weatherClass = isNight ? "dust-night" : "dust-day";
+      } else if (wId === 771) {
+        weatherClass = isNight ? "squall-night" : "squall-day";
+      } else if (wId === 781) {
+        weatherClass = isNight ? "tornado-night" : "tornado-day";
+      } else {
+        weatherClass = isNight ? "fog-night" : "fog-day";
+      }
+
       if (wId === 701) amIcon = "mist";
       else if (
         wId === 711 ||
@@ -1319,11 +1828,12 @@ async function getWeather(
         wId === 762
       )
         amIcon = "haze";
+      else if (wId === 771 || wId === 781) amIcon = "severe-thunderstorm";
       else amIcon = "fog";
-    } else if (wId === 800 || wId === 801) {
+    } else if (wId === 800) {
       weatherClass = isNight ? "clear-night" : "clear-day";
       amIcon = isNight ? "clear-night" : "clear-day";
-    } else if (wId === 802) {
+    } else if (wId === 801 || wId === 802) {
       weatherClass = isNight ? "partly-cloudy-night" : "partly-cloudy-day";
       amIcon = isNight ? "partly-cloudy" : "partly-sunny";
     } else if (wId === 803) {
@@ -1332,21 +1842,62 @@ async function getWeather(
     } else if (wId === 804) {
       weatherClass = isNight ? "overcast-night" : "overcast-day";
       amIcon = "overcast";
+    } else if (wId >= 900) {
+      if (wId === 900) {
+        weatherClass = isNight ? "tornado-night" : "tornado-day";
+        amIcon = "severe-thunderstorm";
+      } else if (wId === 901 || wId === 902) {
+        weatherClass = isNight ? "squall-night" : "squall-day";
+        amIcon = "severe-thunderstorm";
+      } else if (wId === 906) {
+        weatherClass = isNight ? "hail-night" : "hail-day";
+        amIcon = "hail";
+      } else if (wId >= 951 && wId <= 955) {
+        weatherClass = isNight ? "clear-night" : "clear-day";
+        amIcon = isNight ? "clear-night" : "clear-day";
+      } else if (wId === 905 || (wId >= 956 && wId <= 959)) {
+        weatherClass = isNight ? "squall-night" : "squall-day";
+        amIcon = "overcast";
+      } else if (wId >= 960 && wId <= 962) {
+        weatherClass = isNight ? "squall-night" : "squall-day";
+        amIcon = "severe-thunderstorm";
+      } else if (wId === 903) {
+        weatherClass = isNight ? "snow-night" : "snow-day";
+        amIcon = "snow";
+      } else if (wId === 904) {
+        weatherClass = isNight ? "clear-night" : "clear-day";
+        amIcon = isNight ? "clear-night" : "clear-day";
+      } else {
+        weatherClass = isNight ? "clear-night" : "clear-day";
+        amIcon = isNight ? "clear-night" : "clear-day";
+      }
     } else {
       weatherClass = isNight ? "clear-night" : "clear-day";
       amIcon = isNight ? "clear-night" : "clear-day";
     }
 
-    const iconUrl = window.getCachedAsset ? window.getCachedAsset(`assets/icons/${amIcon}.svg`) : `assets/icons/${amIcon}.svg`;
+    const iconUrl = window.getCachedAsset
+      ? window.getCachedAsset(`assets/icons/${amIcon}.svg`)
+      : `assets/icons/${amIcon}.svg`;
     const weatherBox = document.querySelector(".weather-box");
     const isAnimDisabled = weatherBox.classList.contains("disable-animations");
     const isAbout = weatherBox.classList.contains("about-mode");
     weatherBox.className = `weather-box${isAnimDisabled ? " disable-animations" : ""}${isAbout ? " about-mode" : ""}`;
-    document.body.className = "";
+    document.body.classList.remove(
+      "clear-day",
+      "clear-night",
+      "partly-cloudy-day",
+      "partly-cloudy-night",
+      "cloudy",
+      "rainy",
+      "snowy",
+      "stormy",
+      "foggy",
+    );
 
     try {
       localStorage.setItem("lastWeatherClass", weatherClass);
-    } catch(e) {}
+    } catch (e) {}
 
     weatherClass.split(" ").forEach((cls) => {
       weatherBox.classList.add(cls);
@@ -1361,7 +1912,7 @@ async function getWeather(
     document
       .querySelectorAll(".thunder-flash")
       .forEach((el) => el.classList.remove("flashing"));
-    if (weatherClass.includes("thunderstorm")) {
+    if (weatherClass.includes("thunderstorm") && !document.hidden) {
       lightningTimers[".lightning-1"] = setTimeout(
         () => triggerLightning(".lightning-1"),
         Math.random() * 3000,
@@ -1461,9 +2012,8 @@ async function getWeather(
         ? formatAstroTime(astroData.moonset)
         : "--:--";
 
-    // Highly Accurate Moon Phase, Age, and Illumination Calculation
     const synodicMonth = 29.53058867;
-    const knownNewMoon = 1704974220; // Jan 11, 2024, 11:57 UTC
+    const knownNewMoon = 1704974220;
     const currentUnix = Math.floor(Date.now() / 1000);
     const diffDays = (currentUnix - knownNewMoon) / 86400;
     let lunarCycles = diffDays / synodicMonth;
@@ -1538,9 +2088,19 @@ async function getWeather(
     let currentHourIndex = -1;
     if (uvData && uvData.hourly && uvData.hourly.time) {
       currentHourIndex = uvData.hourly.time.indexOf(locTimeStr);
-    }
-    if (currentHourIndex === -1) {
-      currentHourIndex = cityTime.getHours();
+      if (currentHourIndex === -1) {
+        let minDiff = Infinity;
+        let targetTime = cityTime.getTime();
+        for (let i = 0; i < uvData.hourly.time.length; i++) {
+          let diff = Math.abs(
+            new Date(uvData.hourly.time[i]).getTime() - targetTime,
+          );
+          if (diff < minDiff) {
+            minDiff = diff;
+            currentHourIndex = i;
+          }
+        }
+      }
     }
 
     let grassPollen = 0,
@@ -1634,29 +2194,16 @@ async function getWeather(
     if (window.generateSmartAlerts) {
       smartAlerts = window.generateSmartAlerts({
         officialAlerts,
-        temp,
-        windKmh,
-        uvData,
-        wId,
-        currentHourIndex,
+        normalizedWeather,
         aqi,
-        precip,
-        visibility,
-        uvIndex,
-        feelsLike,
-        humidity,
+        currentHourIndex,
         currentTimeFormat,
         currentUnits,
-        pressureTrend,
-        pressureHpa,
         grassStatus,
         treeStatus,
         weedStatus,
-        displayFeelsLike,
         dewPoint,
-        cloudCover,
-        visibilityVal,
-        isNight,
+        uvData,
       });
     }
     if (smartAlerts.length === 0) {
@@ -1713,32 +2260,17 @@ async function getWeather(
         let hCode = uvData.hourly.weather_code[i];
         let isDay = uvData.hourly.is_day ? uvData.hourly.is_day[i] : 1;
 
-        let hIcon = "clear-day";
-        if (hCode === 0 || hCode === 1)
-          hIcon = isDay ? "clear-day" : "clear-night";
-        else if (hCode === 2) hIcon = isDay ? "partly-sunny" : "partly-cloudy";
-        else if (hCode === 3) hIcon = "overcast";
-        else if (hCode === 45 || hCode === 48) hIcon = "fog";
-        else if (hCode >= 51 && hCode <= 57) hIcon = "drizzle";
-        else if (hCode === 65 || hCode === 67 || hCode === 82)
-          hIcon = "extreme-rain";
-        else if (hCode >= 61 && hCode <= 67) hIcon = "rain";
-        else if (hCode >= 80 && hCode <= 82) hIcon = "rain";
-        else if (hCode === 75 || hCode === 77 || hCode === 86)
-          hIcon = "extreme-snow";
-        else if (hCode >= 71 && hCode <= 77) hIcon = "snow";
-        else if (hCode >= 85 && hCode <= 86) hIcon = "snow";
-        else if (hCode >= 96) hIcon = "severe-thunderstorm";
-        else if (hCode >= 95) hIcon = "thunderstorm";
+        let hIcon = window.getWmoIcon(hCode, isDay);
 
         let timeStr = i === currentHourIndex ? "Now" : formatHour(i);
         hoursData.push({ temp: dTemp, icon: hIcon, timeStr });
 
         let hPrecip =
           uvData.hourly.precipitation_probability &&
-          uvData.hourly.precipitation_probability[i] !== undefined
+          uvData.hourly.precipitation_probability[i] !== undefined &&
+          uvData.hourly.precipitation_probability[i] !== null
             ? uvData.hourly.precipitation_probability[i]
-            : 0;
+            : "N/A";
         precipPoints.push(hPrecip);
       }
 
@@ -1794,17 +2326,17 @@ async function getWeather(
         let pBarsHtml = "";
         for (let j = 0; j < precipPoints.length; j++) {
           let x = (j + 0.5) * pointWidth;
-          let barHeight = (precipPoints[j] / 100) * 35;
+          let popVal = precipPoints[j];
+          let barHeight = popVal !== "N/A" ? (popVal / 100) * 35 : 0;
           let y = 50 - barHeight;
 
-          if (precipPoints[j] > 0) {
-            pBarsHtml += `<rect x="${j * pointWidth}" y="${y}" width="${pointWidth}" height="${barHeight}" fill="rgba(11, 35, 58, 1)" />`;
-            pBarsHtml += `<line x1="${j * pointWidth}" y1="${y}" x2="${j * pointWidth + pointWidth}" y2="${y}" stroke="rgba(56, 103, 182)" stroke-width="2" />`;
+          if (popVal !== "N/A" && popVal > 0) {
+            pBarsHtml += `<rect x="${x - 10}" y="${y}" width="20" height="${barHeight}" fill="#4facfe" rx="3" ry="3" />`;
           }
 
           pLabelsHtml += `
                       <div style="position: absolute; left: ${x}px; top: 0; width: ${pointWidth}px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; pointer-events: none; height: ${totalHeight}px;">
-                          <span style="position: absolute; top: ${y - 20}px; font-size: 0.6rem; font-weight: bold; color: inherit;">${precipPoints[j]}%</span>
+                          <span style="position: absolute; top: ${y - 20}px; font-size: 0.6rem; font-weight: bold; color: inherit;">${popVal !== "N/A" ? popVal + "%" : "N/A"}</span>
                           <img src="${window.getCachedAsset(`assets/icons/${hoursData[j].icon}.svg`)}" style="position: absolute; top: 55px; width: 28px; height: 28px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4));" alt="${hoursData[j].icon}" draggable="false">
                           <span style="position: absolute; top: 85px; font-size: 0.55rem; opacity: 0.8; white-space: nowrap; color: inherit;">${hoursData[j].timeStr}</span>
                       </div>
@@ -1853,22 +2385,7 @@ async function getWeather(
 
         let dCode = uvData.daily.weather_code[i];
 
-        let dIcon = "clear-day";
-        if (dCode === 0 || dCode === 1) dIcon = "clear-day";
-        else if (dCode === 2) dIcon = "partly-sunny";
-        else if (dCode === 3) dIcon = "overcast";
-        else if (dCode === 45 || dCode === 48) dIcon = "fog";
-        else if (dCode >= 51 && dCode <= 57) dIcon = "drizzle";
-        else if (dCode === 65 || dCode === 67 || dCode === 82)
-          dIcon = "extreme-rain";
-        else if (dCode >= 61 && dCode <= 67) dIcon = "rain";
-        else if (dCode >= 80 && dCode <= 82) dIcon = "rain";
-        else if (dCode === 75 || dCode === 77 || dCode === 86)
-          dIcon = "extreme-snow";
-        else if (dCode >= 71 && dCode <= 77) dIcon = "snow";
-        else if (dCode >= 85 && dCode <= 86) dIcon = "snow";
-        else if (dCode >= 96) dIcon = "severe-thunderstorm";
-        else if (dCode >= 95) dIcon = "thunderstorm";
+        let dIcon = window.getWmoIcon(dCode, 1);
 
         let timeStr = "Today";
         if (i > 0) {
@@ -1884,9 +2401,10 @@ async function getWeather(
 
         let dPrecip =
           uvData.daily.precipitation_probability_max &&
-          uvData.daily.precipitation_probability_max[i] !== undefined
+          uvData.daily.precipitation_probability_max[i] !== undefined &&
+          uvData.daily.precipitation_probability_max[i] !== null
             ? uvData.daily.precipitation_probability_max[i]
-            : 0;
+            : "N/A";
         dailyPrecipPoints.push(dPrecip);
       }
 
@@ -1945,17 +2463,17 @@ async function getWeather(
         let pBarsHtml = "";
         for (let j = 0; j < dailyPrecipPoints.length; j++) {
           let x = (j + 0.5) * pointWidth;
-          let barHeight = (dailyPrecipPoints[j] / 100) * 35;
+          let dPopVal = dailyPrecipPoints[j];
+          let barHeight = dPopVal !== "N/A" ? (dPopVal / 100) * 35 : 0;
           let y = 50 - barHeight;
 
-          if (dailyPrecipPoints[j] > 0) {
-            pBarsHtml += `<rect x="${j * pointWidth}" y="${y}" width="${pointWidth}" height="${barHeight}" fill="rgba(11, 35, 58, 1)" />`;
-            pBarsHtml += `<line x1="${j * pointWidth}" y1="${y}" x2="${j * pointWidth + pointWidth}" y2="${y}" stroke="rgba(56, 103, 182)" stroke-width="2" />`;
+          if (dPopVal !== "N/A" && dPopVal > 0) {
+            pBarsHtml += `<rect x="${x - 10}" y="${y}" width="20" height="${barHeight}" fill="#4facfe" rx="3" ry="3" />`;
           }
 
           pLabelsHtml += `
                       <div style="position: absolute; left: ${x}px; top: 0; width: ${pointWidth}px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; pointer-events: none; height: ${totalHeight}px;">
-                          <span style="position: absolute; top: ${y - 20}px; font-size: 0.6rem; font-weight: bold; color: inherit;">${dailyPrecipPoints[j]}%</span>
+                          <span style="position: absolute; top: ${y - 20}px; font-size: 0.6rem; font-weight: bold; color: inherit;">${dPopVal !== "N/A" ? dPopVal + "%" : "N/A"}</span>
                           <img src="${window.getCachedAsset(`assets/icons/${daysData[j].icon}.svg`)}" style="position: absolute; top: 55px; width: 28px; height: 28px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4));" alt="${daysData[j].icon}" draggable="false">
                           <span style="position: absolute; top: 85px; font-size: 0.55rem; opacity: 0.8; white-space: nowrap; color: inherit;">${daysData[j].timeStr}</span>
                       </div>
@@ -2004,7 +2522,7 @@ async function getWeather(
         let isIncrease = bestDiff > 0;
         let arrowIcon = isIncrease ? "bx-trending-up" : "bx-trending-down";
         humidityChangeHtml = `
-            <div class="detail-extra-col" style="text-align: right; display: flex; flex-direction: column; justify-content: center; margin-left: auto; margin-top: -10px; padding-right: -5px;">
+            <div class="detail-extra-col" style="text-align: right; display: flex; flex-direction: column; justify-content: center; margin-left: auto; margin-top: -10px; margin-right: -5px;">
                 <span style="font-size: 0.75rem; color: inherit; font-weight: bold; display: flex; align-items: center; justify-content: flex-end; gap: 3px;">
                     <i class='bx ${arrowIcon}'></i> ${maxAbsDiff}%
                 </span>
@@ -2013,7 +2531,7 @@ async function getWeather(
         `;
       } else {
         humidityChangeHtml = `
-            <div class="detail-extra-col" style="text-align: right; display: flex; flex-direction: column; justify-content: center; margin-left: auto;  margin-top: -10px; padding-right: -5px;">
+            <div class="detail-extra-col" style="text-align: right; display: flex; flex-direction: column; justify-content: center; margin-left: auto;  margin-top: -10px; margin-right: -5px;">
                 <span style="font-size: 0.75rem; color: inherit; opacity: 0.7; font-weight: bold; display: flex; align-items: center; justify-content: flex-end; gap: 3px;">
                     <i class='bx bx-minus'></i> 0%
                 </span>
@@ -2058,7 +2576,7 @@ async function getWeather(
         }
 
         peakUvHtml = `
-            <div class="detail-extra-col" style="text-align: right; display: flex; flex-direction: column; justify-content: center; margin-left: auto; margin-top: -10px; padding-right: -5px;">
+            <div class="detail-extra-col" style="text-align: right; display: flex; flex-direction: column; justify-content: center; margin-left: auto; margin-top: -10px; margin-right: -5px;">
                 <span style="font-size: 0.75rem; color: inherit; font-weight: bold; display: flex; align-items: center; justify-content: flex-end;">
                     ${timeDisplay}
                 </span>
@@ -2070,11 +2588,12 @@ async function getWeather(
           uvData &&
           uvData.daily &&
           uvData.daily.uv_index_max &&
-          uvData.daily.uv_index_max[0] !== undefined
+          uvData.daily.uv_index_max[0] !== undefined &&
+          uvData.daily.uv_index_max[0] !== null
             ? Number(uvData.daily.uv_index_max[0].toFixed(1))
-            : 0;
+            : "N/A";
         peakUvHtml = `
-            <div class="detail-extra-col" style="text-align: right; display: flex; flex-direction: column; justify-content: center; margin-left: auto; margin-top: -8px; padding-right: -5px;">
+            <div class="detail-extra-col" style="text-align: right; display: flex; flex-direction: column; justify-content: center; margin-left: auto; margin-top: -8px; margin-right: -5px;">
                 <span style="font-size: 0.75rem; color: inherit; font-weight: bold; display: flex; align-items: center; justify-content: flex-end;">
                     ${todayMaxUv}
                 </span>
@@ -2096,6 +2615,7 @@ async function getWeather(
         ? (data.main.temp_min * 9) / 5 + 32
         : data.main.temp_min,
     );
+
     if (
       uvData &&
       uvData.daily &&
@@ -2114,11 +2634,17 @@ async function getWeather(
 
     const homeResultNode = document.getElementById("home-result");
     if (homeResultNode) homeResultNode.style.display = "none";
-    
+
+    if (useCache || isSilentRefresh) {
+      result.classList.add("cached-render");
+    } else {
+      result.classList.remove("cached-render");
+    }
+
     result.innerHTML = `
           <div class="weather-main-display">
               <div class="weather-info">
-                  <div class="city-main">${finalCityName}, <span class="info-icon-wrapper">${country}<i class='bx bx-info-circle info-icon' tabindex="0"></i><div class="info-tooltip">${finalFullAddress}</div></span></div>
+                  <div class="city-main">${window.escapeHTML(finalCityName)}, <span class="info-icon-wrapper">${window.escapeHTML(country)}<i class='bx bx-info-circle info-icon' tabindex="0"></i><div class="info-tooltip">${finalFullAddress}</div></span></div>
                   <div class="time-main" id="city-time">Loading...</div>
                   <div class="condition-main">${condition}</div>
                   <div class="temp-main">${Math.round(displayTemp)}<span class="temp-unit">${tempUnit}</span></div>
@@ -2129,19 +2655,17 @@ async function getWeather(
               </div>
           </div>
           ${window.getSmartAlertsHTML ? window.getSmartAlertsHTML(smartAlerts) : ""}
-          </div>
-          
           <div class="details-grid">
               <!-- Precipitation -->
               <div class="glass-tab detail-tab">
-                  <span class="tab-label detail-tab-label" style="margin-top: -6px; margin-left: -3px;"><i class='bx bx-cloud-rain' style="transform: translateY(2px);"></i> Precipitation</span>
+                  <span class="tab-label detail-tab-label" style="margin-top: -6px; margin-left: -3px;"><i class='bx bx-cloud-rain' style="transform: translateY(2px);"></i> ${precipType === "snow_liquid" ? "Snow Liquid" : precipType === "snowfall" ? "Snowfall" : "Precipitation"}</span>
                   <div class="detail-tab-content">
                       <div class="detail-val-col">
-                          <span class="tab-value" style="text-align: left; margin-left: -1px;">${precipStr} ${currentUnits.precip}</span>
+                          <span class="tab-value" style="text-align: left; margin-left: -1px;">${precipStr} ${precipUnitOverride || currentUnits.precip}</span>
                           <span class="detail-sub-val" style="color: ${precipColor}; text-align: left; margin-left: -1px;">${precipCondition}</span>
                       </div>
                       <div class="detail-extra-col">
-                          <span class="tab-value" style="position: relative; top: -4px;">${precipProb}%</span>
+                          <span class="tab-value" style="position: relative; top: -4px;">${precipProb !== "N/A" ? precipProb + "%" : "N/A"}</span>
                       </div>
                   </div>
               </div>
@@ -2154,8 +2678,11 @@ async function getWeather(
                           <span class="detail-sub-val" style="color: ${windColor}; text-align: left; margin-left: 7px;">${windLabel}</span>
                       </div>
                       <div class="wind-dir-col">
-                          <span class="wind-dir-text">${windDir}</span>
-                          <i class='bx bx-navigation wind-dir-icon' style="transform: rotate(${windDeg - 45}deg);"></i>
+                          ${
+                            windDir
+                              ? `<img class="wind-dir-icon" src="assets/icons/winddir_${windDir}.svg" alt="${windDir}" style="width: 28px; height: 28px; transform: scale(2.5); transform-origin: center;" />`
+                              : `<div class="wind-dir-icon" style="width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; opacity: 0.5;">—</div>`
+                          }
                       </div>
                   </div>
               </div>
@@ -2183,42 +2710,42 @@ async function getWeather(
               </div>
 
               <!-- Visibility, Pressure, Dew Point (Row of 3) -->
-              <div class="glass-tab one-third detail-tab center">
-                  <span class="tab-label detail-tab-label" style="margin-top: -4px; margin-left: -36px;"><i class='ti ti-eye' style="transform: translateY(2px); font-size: 0.85rem;"></i> Visibility</span>
-                  <div class="detail-tab-content center">
-                      <div class="detail-val-col no-margin">
-                          <span class="tab-value ellipsis-text" style="text-align: left; margin-left: -2px;">${visStr} ${currentUnits.vis}</span>
-                          <span class="detail-sub-val small ellipsis-text" style="color: ${visColor}; text-align: left; margin-left: -1px;">${visLabel}</span>
+              <div class="glass-tab one-third detail-tab" style="text-align: left;">
+                  <span class="tab-label detail-tab-label" style="margin-top: -4px; margin-left: 0px; display: flex; align-items: center; justify-content: flex-start;"><i class='ti ti-eye' style="transform: translateY(1px); font-size: 0.85rem; margin-right: 4px;"></i> Visibility</span>
+                  <div class="detail-tab-content" style="justify-content: flex-start;">
+                      <div class="detail-val-col no-margin" style="margin-left: 17px;">
+                          <span class="tab-value ellipsis-text" style="text-align: left; margin-left: 0;">${visStr !== "N/A" ? visStr + " " + currentUnits.vis : "N/A"}</span>
+                          <span class="detail-sub-val small ellipsis-text" style="color: ${visColor}; text-align: left; margin-left: 0;">${visLabel}</span>
                       </div>
                   </div>
               </div>
-              <div class="glass-tab one-third detail-tab center">
-                  <span class="tab-label detail-tab-label" style="margin-top: -4px; margin-left: -36px;"><i class= 'ti ti-fold' style="transform: translateY(1px); font-size: 0.75rem;"></i> Pressure</span>
-                  <div class="detail-tab-content center">
-                      <div class="detail-val-col no-margin">
-                          <span class="tab-value ellipsis-text" style="text-align: left; margin-left: 2px;">${pressStr} ${currentUnits.press}</span>
-                          <span class="detail-sub-val small ellipsis-text" style="color: ${pressColor}; text-align: left; margin-left: 4px;">${pressLabel}</span>
+              <div class="glass-tab one-third detail-tab" style="text-align: left;">
+                  <span class="tab-label detail-tab-label" style="margin-top: -4px; margin-left: 0px; display: flex; align-items: center; justify-content: flex-start;"><i class= 'ti ti-fold' style="transform: translateY(1px); font-size: 0.75rem; margin-right: 4px;"></i> Pressure</span>
+                  <div class="detail-tab-content" style="justify-content: flex-start;">
+                      <div class="detail-val-col no-margin" style="margin-left: 15px;">
+                          <span class="tab-value ellipsis-text" style="text-align: left; margin-left: 0;">${pressStr} ${currentUnits.press}</span>
+                          <span class="detail-sub-val small ellipsis-text" style="color: ${pressColor}; text-align: left; margin-left: 0;">${pressLabel}</span>
                       </div>
                   </div>
               </div>
-              <div class="glass-tab one-third detail-tab center">
-                  <span class="tab-label detail-tab-label" style="margin-top: -3px; margin-left: -30px;"><i class='bx bxs-droplet-half' style="transform: translateY(0.5px); font-size: 0.75rem;"></i> Dew Point</span>
-                  <div class="detail-tab-content center">
-                      <div class="detail-val-col no-margin">
-                          <span class="tab-value ellipsis-text" style="text-align: left; margin-left: -3px;">${displayDew}${dewUnitStr}</span>
-                          <span class="detail-sub-val small ellipsis-text" style="color: ${dewColor}; text-align: left; margin-left: -3px;">${dewLabel}</span>
+              <div class="glass-tab one-third detail-tab" style="text-align: left;">
+                  <span class="tab-label detail-tab-label" style="margin-top: -3px; margin-left: 0px; display: flex; align-items: center; justify-content: flex-start;"><i class='bx bxs-droplet-half' style="transform: translateY(0.5px); font-size: 0.75rem; margin-right: 4px;"></i> Dew Point</span>
+                  <div class="detail-tab-content" style="justify-content: flex-start;">
+                      <div class="detail-val-col no-margin" style="margin-left: 15px;">
+                          <span class="tab-value ellipsis-text" style="text-align: left; margin-left: 0;">${displayDew}${dewUnitStr}</span>
+                          <span class="detail-sub-val small ellipsis-text" style="color: ${dewColor}; text-align: left; margin-left: 0;">${dewLabel}</span>
                       </div>
                   </div>
               </div>
               
-              <!-- AQI (Long) -->
+              <!-- AQI -->
               <div class="glass-tab full-width detail-tab">
                   <div class="aqi-header-row">
                       <span class="tab-label detail-tab-label no-margin" style="margin-top: -14px; margin-left: -3px;"><i class='bx bx-leaf' style="transform: translateY(2px);"></i> Air Quality</span>
                   </div>
                   <div class="aqi-content-row">
                       <div class="aqi-val-col">
-                          <span class="tab-value">${aqi}</span>
+                          <span class="tab-value">${aqi !== null ? aqi : "-"}</span>
                           <span class="aqi-sub-val" style="color: ${aqiColor};">${aqiLabel}</span>
                       </div>
                       <div class="aqi-bar-container">
@@ -2232,7 +2759,7 @@ async function getWeather(
                               <span class="aqi-scale-label right-align" style="left: 100%;">500</span>
                           </div>
                           <div class="aqi-bar">
-                              <div class="aqi-indicator" style="left: ${Math.min((aqi / 500) * 100, 100)}%; background: ${aqiDarkColor};"></div>
+                              <div class="aqi-indicator" style="left: ${aqi !== null ? Math.min((aqi / 500) * 100, 100) : 0}%; background: ${aqiDarkColor};"></div>
                           </div>
                           <div class="aqi-status-labels">
                               <span class="aqi-scale-label" style="left: 0%;">Good</span>
@@ -2308,20 +2835,17 @@ async function getWeather(
                   </div>
               </div>
               
-              <!-- Sun and Moon -->
+              <!-- Sun -->
               <div class="glass-tab detail-tab" style="flex: 1.35; padding-top: 10px; padding-bottom: 5px;">
                   <span class="tab-label detail-tab-label no-margin" style="margin-top: -6px; margin-left: -3px;">
                       <i class='ti ti-sunset-2' style="transform: translateY(2px); font-size: 0.85rem;"></i> Sun
                   </span>
                   <div style="display: flex; justify-content: space-between; align-items: center; margin-top: -3px; width: 100%;">
-                      <!-- Sunrise -->
                       <div style="display: flex; flex-direction: column; align-items: center; flex: 1;">
                           <img src="${window.getCachedAsset(`assets/icons/sun-rise.svg`)}" style="width: 32px; height: 32px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));" alt="Sunrise">
                           <span style="font-size: 0.5rem; font-weight: bold; opacity: 0.8; margin-top: -4px; margin-bottom: 1px;">Sunrise</span>
                           <span style="font-size: 0.45rem; font-weight: bold; white-space: nowrap;">${sunriseTime}</span>
                       </div>
-                      
-                      <!-- Curve -->
                       <div style="flex: 1.5; position: relative; height: 22px; margin: 0 5px; display: flex; justify-content: center; align-items: flex-end;">
                           <svg width="calc(100% + 22px)" height="35" viewBox="0 0 100 35" preserveAspectRatio="none" style="position: absolute; bottom: 0; left: -10px;">
                               <path d="M 0 35 A 67 67 0 0 1 100 35" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="0.8" stroke-dasharray="2 2" vector-effect="non-scaling-stroke"></path>
@@ -2329,8 +2853,6 @@ async function getWeather(
                           <i class='ti ti-sun-filled' style="color: #ffd54f; font-size: 0.75rem; line-height: 1; display: inline-flex; align-items: center; justify-content: center; position: absolute; left: ${sunLeftCalc}; top: ${sunTopCalc}; transform: translate(-52%, -50%); filter: drop-shadow(0 0 5px rgba(255, 213, 79, 0.8)); transition: left 1s ease, top 1s ease;"></i>
                           <span style="position: absolute; bottom: -10px; font-size: 0.45rem; opacity: 0.8; font-weight: bold;">${daylightDurationStr}</span>
                       </div>
-                      
-                      <!-- Sunset -->
                       <div style="display: flex; flex-direction: column; align-items: center; flex: 1;">
                           <img src="${window.getCachedAsset(`assets/icons/sun-set.svg`)}" style="width: 32px; height: 32px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4)); margin-top: 0px;" alt="Sunset">
                           <span style="font-size: 0.5rem; font-weight: bold; opacity: 0.8; margin-top: -4px; margin-bottom: 1px;">Sunset</span>
@@ -2338,28 +2860,23 @@ async function getWeather(
                       </div>
                   </div>
               </div>
-              
+
+              <!-- Moon -->
               <div class="glass-tab detail-tab" style="flex: 0.85; padding-top: 10px; padding-bottom: 5px; min-width: 0;">
                   <span class="tab-label detail-tab-label no-margin" style="margin-top: -6px; margin-left: -3px;">
                       <i class='ti ti-moon' style="transform: translateY(-2px); font-size: 0.75rem;"></i> Moon
                   </span>
                   <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 5px; width: 100%;">
-                      <!-- Left: Moon Phase Icon -->
                       <img src="${window.getCachedAsset(`assets/icons/${moonIconFile}`)}" style="width: 42px; height: 42px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4)); margin-right: 6px;" alt="${moonPhase}">
-                      
-                      <!-- Details: Phase Name, Illumination, Age, Moonrise, Moonset -->
                       <div style="display: flex; flex-direction: column; flex: 1; min-width: 0;">
                           <span style="font-size: 0.5rem; font-family: 'LocalMerriweatherSans', 'Merriweather Sans', sans-serif; font-weight: bold; line-height: 1.1; white-space: nowrap; overflow: hidden; max-width: 70px;">${moonPhase}</span>
                           <div style="display: flex; justify-content: space-between; width: 100%;">
-                              <!-- Middle: Illumination, Age -->
                               <div style="display: flex; flex-direction: column; align-items: flex-start;">
                                   <span style="font-size: 0.35rem; opacity: 0.8; margin-top: 3px; margin-bottom: 1.5px;">Illum</span>
                                   <span style="font-size: 0.4rem; font-weight: bold;">${moonIllumination}%</span>
                                   <span style="font-size: 0.35rem; opacity: 0.8; margin-top: 1.5px; margin-bottom: 1.5px;">Age</span>
                                   <span style="font-size: 0.4rem; font-weight: bold;">${moonAge}d</span>
                               </div>
-                              
-                              <!-- Right: Moonrise and Moonset -->
                               <div style="display: flex; flex-direction: column; align-items: flex-start; margin-left: 5px;">
                                   <span style="font-size: 0.35rem; opacity: 0.8; margin-top: 3px; margin-bottom: 1.5px;">Moonrise</span>
                                   <span style="font-size: 0.4rem; font-weight: bold; white-space: nowrap; overflow: hidden; max-width: 40px;">${moonriseTime}</span>
@@ -2381,12 +2898,12 @@ async function getWeather(
                   
                   <div id="hourly-sub-tabs" style="display: flex; justify-content: flex-start; align-items: center; gap: 15px; width: 100%; margin-top: 1px; margin-bottom: 10px; padding-left: 15px;">
                       <span id="hourly-temp-tab" onclick="switchHourlySubTab('temp')" style="font-size: 0.55rem; font-family: 'LocalMerriweatherSans', 'Merriweather Sans', sans-serif; font-weight: bold; cursor: pointer; color: inherit; opacity: 1; transition: opacity 0.2s;">Temperature</span>
-                      <div style="width: 1px; height: 10px; background: rgba(255, 255, 255, 0.3);"></div>
+                      <div class="sub-tab-divider" style="width: 1px; height: 10px; background: rgba(255, 255, 255, 0.3);"></div>
                       <span id="hourly-precip-tab" onclick="switchHourlySubTab('precip')" style="font-size: 0.55rem; font-family: 'LocalMerriweatherSans', 'Merriweather Sans', sans-serif; font-weight: bold; cursor: pointer; color: inherit; opacity: 0.6; transition: opacity 0.2s;">Precipitation</span>
                   </div>
                   <div id="daily-sub-tabs" style="display: none; justify-content: flex-start; align-items: center; gap: 15px; width: 100%; margin-top: 1px; margin-bottom: 10px; padding-left: 15px;">
                       <span id="daily-temp-tab" onclick="switchDailySubTab('temp')" style="font-size: 0.55rem; font-family: 'LocalMerriweatherSans', 'Merriweather Sans', sans-serif; font-weight: bold; cursor: pointer; color: inherit; opacity: 1; transition: opacity 0.2s;">Temperature</span>
-                      <div style="width: 1px; height: 10px; background: rgba(255, 255, 255, 0.3);"></div>
+                      <div class="sub-tab-divider" style="width: 1px; height: 10px; background: rgba(255, 255, 255, 0.3);"></div>
                       <span id="daily-precip-tab" onclick="switchDailySubTab('precip')" style="font-size: 0.55rem; font-family: 'LocalMerriweatherSans', 'Merriweather Sans', sans-serif; font-weight: bold; cursor: pointer; color: inherit; opacity: 0.6; transition: opacity 0.2s;">Precipitation</span>
                   </div>
                   
@@ -2442,48 +2959,64 @@ async function getWeather(
     if (window.initSmartAlertsCycle) {
       window.initSmartAlertsCycle(smartAlerts);
     }
-    
+
     try {
       const currentHtml = document.getElementById("result").innerHTML;
       sessionStorage.setItem("cachedWeatherHTML", currentHtml);
       sessionStorage.setItem("cachedWeatherCity", city);
-    } catch(e) {}
-    
+    } catch (e) {}
+
     if (typeof window.pushAppState === "function") {
       window.pushAppState("#weather/" + encodeURIComponent(city));
     }
 
     if (typeof fetchStartupCityWeather === "function") {
-      currentStartupCity = localStorage.getItem("lastCity");
+      window.currentStartupCity = localStorage.getItem("lastCity");
       fetchStartupCityWeather(true);
     }
 
-    if (weatherInterval) clearTimeout(weatherInterval);
-    if (currentRefreshInterval > 0) {
-      weatherInterval = setTimeout(
-        () => getWeather(true),
-        currentRefreshInterval * 60000,
-      );
-    }
+    window.lastWeatherData = {
+      geoLat,
+      geoLon,
+      resolvedCityName,
+      resolvedCountry,
+      resolvedFullAddress,
+      data,
+      aqData,
+      uvData,
+      alertsData,
+    };
+
     setTimeout(adjustZoom, 100);
   } catch (error) {
+    if (error.name === "AbortError") {
+      if (slowConnTimer) clearTimeout(slowConnTimer);
+      return;
+    }
     if (slowConnTimer) clearTimeout(slowConnTimer);
 
-    if (!isAutoUpdate) {
-      result.innerHTML = "";
-      let msg = error.message;
-      if (
-        msg.includes("Failed to fetch") ||
-        msg.includes("NetworkError") ||
-        !navigator.onLine
-      ) {
-        msg = "No internet connection";
-      }
-      showMessage(
-        msg,
-        "This might be due to a typo, missing data for the location, a connection issue, or an API limitation.",
-      );
+    if (isSilentRefresh && result && result.innerHTML.trim() !== "") {
+      const subtleLoader = document.getElementById("subtle-loader");
+      if (subtleLoader)
+        subtleLoader.innerHTML = `<i class="ti ti-alert-triangle" style="color:#ffcccc"></i> Offline`;
+      console.warn("Silent refresh failed:", error);
+      return;
     }
+
+    const existingLoader = document.getElementById("main-loader");
+    if (existingLoader) existingLoader.remove();
+    let msg = error.message;
+    if (
+      msg.includes("Failed to fetch") ||
+      msg.includes("NetworkError") ||
+      !navigator.onLine
+    ) {
+      msg = "No internet connection";
+    }
+    showMessage(
+      msg,
+      "This might be due to a typo, missing data for the location, a connection issue, or an API limitation.",
+    );
   }
 }
 
@@ -2493,9 +3026,11 @@ document.addEventListener("click", function (e) {
   const searchBar = document.querySelector(".input-group");
 
   if (messageBox && messageBox.style.display === "block") {
+    const searchBtn = document.getElementById("search-btn");
     if (
       !messageBox.contains(e.target) &&
-      (!searchBar || !searchBar.contains(e.target))
+      (!searchBar || !searchBar.contains(e.target)) &&
+      (!searchBtn || !searchBtn.contains(e.target))
     ) {
       messageBox.style.display = "none";
     }
@@ -2531,6 +3066,17 @@ document.addEventListener("touchstart", function (e) {
       (!searchBar || !searchBar.contains(e.target))
     ) {
       suggestionsBox.style.display = "none";
+    }
+  }
+});
+
+window.addEventListener("online", function () {
+  const cityInput = document.getElementById("city");
+  if (cityInput && cityInput.value.trim() !== "") {
+    const messageBox = document.getElementById("message-box");
+    if (messageBox) messageBox.style.display = "none";
+    if (typeof getWeather === "function") {
+      getWeather(false, null, null, null, null, false, true);
     }
   }
 });
