@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Weather Box | Real-Time Weather Forecast & Updates</title>
+    <title>Weather Box | Current Weather, Forecasts & Updates</title>
     <link rel="icon" type="image/x-icon" href="assets/title/weatherbox.ico" />
     <link
       rel="icon"
@@ -35,74 +35,50 @@
     <style>
       @import url("https://fonts.googleapis.com/css2?family=Oswald:wght@400;500&display=swap");
     </style>
-    <script>
-      (function () {
-        const fonts = [
-          {
-            name: "LocalImpact",
-            url: "assets/fonts/impact.ttf",
-            format: "truetype",
-          },
-          {
-            name: "LocalBrushScript",
-            url: "assets/fonts/brushsci.ttf",
-            format: "truetype",
-          },
-          {
-            name: "LocalComicSans",
-            url: "assets/fonts/comic.ttf",
-            format: "truetype",
-          },
-          {
-            name: "LocalLato",
-            url: "assets/fonts/Lato-Regular.ttf",
-            format: "truetype",
-          },
-          {
-            name: "LocalMerriweatherSans",
-            url: "assets/fonts/MerriweatherSans-Regular.ttf",
-            format: "truetype",
-          },
-          {
-            name: "LocalPacifico",
-            url: "assets/fonts/Pacifico-Regular.ttf",
-            format: "truetype",
-          },
-        ];
-
-        let styleStr = "";
-        fonts.forEach((font) => {
-          const storageKey = "font_" + font.name;
-          const cachedFont = localStorage.getItem(storageKey);
-          if (cachedFont) {
-            styleStr += `@font-face { font-family: "${font.name}"; src: url("${cachedFont}") format("${font.format}"); font-weight: normal; font-style: normal; font-display: swap; }\n`;
-          } else {
-            styleStr += `@font-face { font-family: "${font.name}"; src: url("${font.url}") format("${font.format}"); font-weight: normal; font-style: normal; font-display: swap; }\n`;
-
-            fetch(font.url)
-              .then((res) => res.blob())
-              .then((blob) => {
-                const reader = new FileReader();
-                reader.onload = function () {
-                  try {
-                    localStorage.setItem(storageKey, reader.result);
-                  } catch (e) {
-                    console.warn("LocalStorage quota exceeded for fonts");
-                  }
-                };
-                reader.readAsDataURL(blob);
-              })
-              .catch((err) => console.warn("Font fetch failed:", err));
-          }
-        });
-
-        if (styleStr) {
-          const style = document.createElement("style");
-          style.innerHTML = styleStr;
-          document.head.appendChild(style);
-        }
-      })();
-    </script>
+    <style>
+      @font-face {
+        font-family: "LocalImpact";
+        src: url("assets/fonts/impact.ttf") format("truetype");
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "LocalBrushScript";
+        src: url("assets/fonts/brushsci.ttf") format("truetype");
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "LocalComicSans";
+        src: url("assets/fonts/comic.ttf") format("truetype");
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "LocalLato";
+        src: url("assets/fonts/Lato-Regular.ttf") format("truetype");
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "LocalMerriweatherSans";
+        src: url("assets/fonts/MerriweatherSans-Regular.ttf") format("truetype");
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "LocalPacifico";
+        src: url("assets/fonts/Pacifico-Regular.ttf") format("truetype");
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+      }
+    </style>
     <script>
       (function () {
         const scenes = [
@@ -202,7 +178,10 @@
               ` { ${scene.prop}: url("${cachedScene}") !important; }\n`;
           } else {
             fetch(scene.url)
-              .then((res) => res.blob())
+              .then((res) => {
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return res.blob();
+              })
               .then((blob) => {
                 const reader = new FileReader();
                 reader.onload = function () {
@@ -252,13 +231,24 @@
                   reader.onload = function () {
                     try {
                       localStorage.setItem(storageKey, reader.result);
+                      document.querySelectorAll("img").forEach((img) => {
+                        if (
+                          img.getAttribute("src") === url ||
+                          img.src.endsWith(url)
+                        ) {
+                          img.src = reader.result;
+                        }
+                      });
                     } catch (e) {
                       console.warn("LocalStorage quota exceeded for assets");
                     }
                   };
                   reader.readAsDataURL(blob);
                 })
-                .catch((err) => console.warn("Asset fetch failed:", err));
+                .catch((err) => {
+                  delete window._assetFetchPromises[url];
+                  console.warn("Asset fetch failed:", err);
+                });
             }
             return url;
           }
@@ -300,7 +290,6 @@
         -webkit-tap-highlight-color: transparent;
       }
 
-      /* Helper to handle overflowing text with an ellipsis (...) */
       .ellipsis-text {
         white-space: nowrap;
         overflow: hidden;
@@ -308,7 +297,6 @@
       }
 
       /* ==================== MAIN LAYOUT ==================== */
-      /* The primary container for the weather widget, styling its size, background, and centering */
       .weather-box {
         background:
           linear-gradient(
@@ -395,7 +383,18 @@
       .weather-box.about-mode .weatherbox-title,
       .weather-box.clear-day .weatherbox-title,
       .weather-box.clear-night .weatherbox-title,
-      .weather-box.fog-night .weatherbox-title {
+      .weather-box.fog-day .weatherbox-title,
+      .weather-box.fog-night .weatherbox-title,
+      .weather-box.smoke-day .weatherbox-title,
+      .weather-box.smoke-night .weatherbox-title,
+      .weather-box.haze-day .weatherbox-title,
+      .weather-box.haze-night .weatherbox-title,
+      .weather-box.dust-day .weatherbox-title,
+      .weather-box.dust-night .weatherbox-title,
+      .weather-box.squall-day .weatherbox-title,
+      .weather-box.squall-night .weatherbox-title,
+      .weather-box.tornado-day .weatherbox-title,
+      .weather-box.tornado-night .weatherbox-title {
         filter: contrast(115%) brightness(108%);
       }
 
@@ -415,13 +414,23 @@
       .weather-box.about-mode .author-text,
       .weather-box.clear-day .author-text,
       .weather-box.clear-night .author-text,
-      .weather-box.fog-night .author-text {
+      .weather-box.fog-day .author-text,
+      .weather-box.fog-night .author-text,
+      .weather-box.smoke-day .author-text,
+      .weather-box.smoke-night .author-text,
+      .weather-box.haze-day .author-text,
+      .weather-box.haze-night .author-text,
+      .weather-box.dust-day .author-text,
+      .weather-box.dust-night .author-text,
+      .weather-box.squall-day .author-text,
+      .weather-box.squall-night .author-text,
+      .weather-box.tornado-day .author-text,
+      .weather-box.tornado-night .author-text {
         color: #fff;
         filter: invert(0);
       }
 
       /* ==================== SEARCH & INPUT ==================== */
-      /* Styling for the location, search bar, button, and autocomplete suggestions */
       .search-container {
         display: flex;
         gap: 10px;
@@ -446,15 +455,15 @@
         background-color: rgba(200, 200, 200, 0.85);
         color: #505050;
         box-shadow:
-          0 0 8px rgba(255, 255, 255, 0.6),
-          0 0 15px rgba(255, 255, 255, 0.4);
+          0 0 8px rgba(255, 255, 255, 0.4),
+          0 0 10px rgba(255, 255, 255, 0.2);
         transition: box-shadow 0.3s ease;
       }
 
       input:focus {
         box-shadow:
-          0 0 12px rgba(255, 255, 255, 0.8),
-          0 0 20px rgba(255, 255, 255, 0.6);
+          0 0 10px rgba(255, 255, 255, 0.8),
+          0 0 12px rgba(255, 255, 255, 0.4);
       }
 
       .weather-box.overcast-day input,
@@ -614,7 +623,6 @@
         animation: pinTada 1s ease infinite;
       }
 
-      /* Dropdown box for search suggestions */
       .suggestions-box {
         position: absolute;
         top: 100%;
@@ -629,7 +637,7 @@
         -webkit-backdrop-filter: blur(10px) brightness(0.7);
         backdrop-filter: blur(10px) brightness(0.7);
         border: 1px solid rgba(255, 255, 255, 0.2);
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
         border-radius: 8px;
         z-index: 20;
         display: none;
@@ -695,7 +703,7 @@
         gap: 2px;
         flex-shrink: 0;
       }
-      
+
       .suggestion-item:hover,
       .suggestion-item.active {
         background: rgba(255, 255, 255, 0.15);
@@ -889,7 +897,231 @@
     <script src="modules/smart-alerts/smart-alerts.js"></script>
     <script src="modules/menu/menu.js"></script>
     <script src="modules/main/main.js"></script>
-    <script src="modules/navigation/navigation.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const hash = window.location.hash;
+
+        if (hash.startsWith("#weather/")) {
+          let hashCity;
+          try {
+            hashCity = decodeURIComponent(hash.replace("#weather/", ""));
+          } catch (e) {
+            hashCity = hash.replace("#weather/", "");
+          }
+          const cityInput = document.getElementById("city");
+          if (cityInput) cityInput.value = hashCity;
+
+          let restoredCache = false;
+          try {
+            const lastWeatherClass = localStorage.getItem("lastWeatherClass");
+            if (lastWeatherClass) {
+              const weatherBox = document.querySelector(".weather-box");
+              if (weatherBox) {
+                lastWeatherClass
+                  .split(" ")
+                  .forEach((cls) => weatherBox.classList.add(cls));
+              }
+            }
+
+            const cachedCity = sessionStorage.getItem("cachedWeatherCity");
+            if (
+              cachedCity &&
+              cachedCity.toLowerCase() === hashCity.toLowerCase()
+            ) {
+              const cachedHTML = sessionStorage.getItem("cachedWeatherHTML");
+              const resultDiv = document.getElementById("result");
+              if (cachedHTML && resultDiv) {
+                resultDiv.innerHTML = cachedHTML;
+                restoredCache = true;
+              }
+            }
+          } catch (e) {}
+
+          if (typeof getWeather === "function") {
+            getWeather(
+              false,
+              null,
+              null,
+              hashCity,
+              null,
+              false,
+              false,
+              restoredCache,
+            );
+          }
+        }
+
+        if (hash === "#about" && typeof toggleAbout === "function") {
+          toggleAbout(true);
+        } else if (hash === "#privacy" && typeof togglePrivacy === "function") {
+          togglePrivacy(true);
+        } else if (hash === "#terms" && typeof toggleTerms === "function") {
+          toggleTerms(true);
+        } else if (
+          hash === "#radar" &&
+          typeof window.toggleRadarView === "function"
+        ) {
+          window.toggleRadarView(true, true);
+        }
+
+        const isModalHash = ["#about", "#privacy", "#terms"].includes(hash);
+        if (!hash.startsWith("#weather/") && !isModalHash) {
+          window.selectedLocation = null;
+          if (localStorage.getItem("rememberCity") === "true") {
+            const lastCity = localStorage.getItem("lastCity");
+            if (lastCity) {
+              const cityInput = document.getElementById("city");
+              if (cityInput) cityInput.value = lastCity;
+              if (typeof fetchStartupCityWeather === "function") {
+                window.currentStartupCity = lastCity;
+                fetchStartupCityWeather();
+              }
+            } else {
+              if (typeof showRandomStartupCity === "function")
+                showRandomStartupCity();
+            }
+          } else {
+            if (typeof showRandomStartupCity === "function")
+              showRandomStartupCity();
+          }
+        }
+      });
+
+      window.pushAppState = function (hashName) {
+        if (window.location.hash !== hashName) {
+          window.history.pushState(null, "", hashName);
+        }
+      };
+
+      window.addEventListener("popstate", function () {
+        const hash = window.location.hash;
+        const aboutPanel = document.getElementById("about-us-panel");
+        const privacyPanel = document.getElementById("privacy-panel");
+        const termsPanel = document.getElementById("terms-panel");
+
+        if (
+          aboutPanel &&
+          aboutPanel.classList.contains("active") &&
+          hash !== "#about"
+        ) {
+          if (typeof toggleAbout === "function") toggleAbout(true);
+        }
+
+        if (
+          privacyPanel &&
+          privacyPanel.classList.contains("active") &&
+          hash !== "#privacy"
+        ) {
+          if (typeof togglePrivacy === "function") togglePrivacy(true);
+        }
+
+        if (
+          termsPanel &&
+          termsPanel.classList.contains("active") &&
+          hash !== "#terms"
+        ) {
+          if (typeof toggleTerms === "function") toggleTerms(true);
+        }
+
+        if (
+          typeof window.toggleRadarView === "function" &&
+          window.isRadarView &&
+          hash !== "#radar"
+        ) {
+          window.toggleRadarView(false, true);
+        }
+
+        if (hash.startsWith("#weather/")) {
+          let hashCity;
+          try {
+            hashCity = decodeURIComponent(hash.replace("#weather/", ""));
+          } catch (e) {
+            hashCity = hash.replace("#weather/", "");
+          }
+          const cityInput = document.getElementById("city");
+          if (cityInput) cityInput.value = hashCity;
+
+          if (
+            window.currentRenderedCityHash &&
+            window.currentRenderedCityHash.toLowerCase() ===
+              hashCity.toLowerCase()
+          ) {
+            const detailsGrid = document.querySelector(".details-grid");
+            const resultDiv = document.getElementById("result");
+            const homeResult = document.getElementById("home-result");
+
+            if (detailsGrid) detailsGrid.style.display = "";
+            if (resultDiv) resultDiv.style.display = "block";
+            if (homeResult) homeResult.style.display = "none";
+
+            const radarBtn = document.getElementById("radar-btn");
+            if (radarBtn) radarBtn.style.display = "block";
+
+            try {
+              const lastWeatherClass = localStorage.getItem("lastWeatherClass");
+              if (lastWeatherClass) {
+                const weatherBox = document.querySelector(".weather-box");
+                if (weatherBox) {
+                  const disabled =
+                    weatherBox.classList.contains("disable-animations");
+                  weatherBox.className = `weather-box${disabled ? " disable-animations" : ""}`;
+                  lastWeatherClass
+                    .split(" ")
+                    .forEach((cls) => weatherBox.classList.add(cls));
+                }
+              }
+            } catch (e) {}
+
+            const radarContainer = document.getElementById("radar-container");
+            if (radarContainer) radarContainer.style.display = "none";
+          } else if (typeof getWeather === "function") {
+            getWeather(false, null, null, hashCity);
+          }
+        } else if (hash === "#about" && typeof toggleAbout === "function") {
+          toggleAbout(true);
+        } else if (hash === "#privacy" && typeof togglePrivacy === "function") {
+          togglePrivacy(true);
+        } else if (hash === "#terms" && typeof toggleTerms === "function") {
+          toggleTerms(true);
+        } else if (
+          hash === "#radar" &&
+          typeof window.toggleRadarView === "function"
+        ) {
+          window.toggleRadarView(true, true);
+        } else if (hash === "" || hash === "#home") {
+          window.selectedLocation = null;
+          const cityInput = document.getElementById("city");
+          if (cityInput) {
+            cityInput.value = "";
+            cityInput.blur();
+          }
+
+          const suggestionsBox = document.getElementById("suggestions-box");
+          if (suggestionsBox) suggestionsBox.innerHTML = "";
+          const messageBox = document.getElementById("message-box");
+          if (messageBox) messageBox.style.display = "none";
+
+          const radarBtn = document.getElementById("radar-btn");
+          if (radarBtn) radarBtn.style.display = "none";
+
+          if (localStorage.getItem("rememberCity") === "true") {
+            const lastCity = localStorage.getItem("lastCity");
+            if (lastCity) {
+              if (typeof fetchStartupCityWeather === "function") {
+                window.currentStartupCity = lastCity;
+                fetchStartupCityWeather();
+              }
+            } else {
+              if (typeof showRandomStartupCity === "function")
+                showRandomStartupCity();
+            }
+          } else {
+            if (typeof showRandomStartupCity === "function")
+              showRandomStartupCity();
+          }
+        }
+      });
+    </script>
     <script>
       document.addEventListener("DOMContentLoaded", function () {
         const weatherBox = document.querySelector(".weather-box");
@@ -937,19 +1169,17 @@
         const searchBtn = document.getElementById("search-btn");
         if (searchBtn) {
           searchBtn.addEventListener("click", function () {
-            getWeather();
+            getWeather(false, null, null, null, null, false, true);
           });
         }
       });
 
       document.getElementById("city").addEventListener("focus", function () {
-        if (startupInterval) clearInterval(startupInterval);
         document.getElementById("message-box").style.display = "none";
       });
 
-      /* Event listener for the city search input. Fetches autocomplete suggestions from OpenStreetMap, Open-Meteo, and OpenWeatherMap based on user input. */
+      window.currentAutocompleteRequestId = 0;
       document.getElementById("city").addEventListener("input", function (e) {
-        if (startupInterval) clearInterval(startupInterval);
         window.selectedLocation = null;
         clearTimeout(debounceTimer);
         const query = e.target.value.trim();
@@ -970,6 +1200,13 @@
         }
 
         debounceTimer = setTimeout(async () => {
+          const requestId = ++window.currentAutocompleteRequestId;
+          if (window.autocompleteAbortController) {
+            window.autocompleteAbortController.abort();
+          }
+          window.autocompleteAbortController = new AbortController();
+          const signal = window.autocompleteAbortController.signal;
+
           if (query.length < 4) {
             suggestionsBox.innerHTML =
               '<div class="suggestion-item" style="opacity: 0.7; cursor: default;">Searching...</div>';
@@ -977,39 +1214,15 @@
           suggestionsBox.style.display = "flex";
 
           try {
-            let isZip = /\d/.test(query);
-            const promises = [
-              fetch(
-                `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&addressdetails=1&limit=5`,
-              ),
-              isZip
-                ? Promise.resolve({ ok: false, status: "skipped" })
-                : fetch(
-                    `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5`,
-                  ),
-              fetch(
-                `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=5&language=en&format=json`,
-              ),
-              fetch(
-                window.getWeatherEndpoint("geo_direct", {
-                  q: encodeURIComponent(query),
-                  limit: 5,
-                }),
-              ),
-              isZip
-                ? fetch(
-                    window.getWeatherEndpoint("geo_zip", {
-                      zip: encodeURIComponent(query),
-                    }),
-                  )
-                : Promise.resolve({ ok: false, status: "skipped" }),
-            ];
-
-            const [nomRes, photonRes, omRes, owmRes, owmZipRes] =
-              await Promise.allSettled(promises);
-
+            let isZip =
+              /^(\d{5}|(?:\d{3,7}|[a-z\d]{2,4}\s?[a-z\d]{3}),\s*[a-z]{2})$/i.test(
+                query.trim(),
+              );
+            let isCoord =
+              /^([-+]?\d{1,2}(?:\.\d+)?)\s*,\s*([-+]?\d{1,3}(?:\.\d+)?)$/.exec(
+                query.trim(),
+              );
             const uniqueResults = [];
-            const seenLocations = new Set();
 
             const addResult = (
               cityName,
@@ -1019,19 +1232,20 @@
               lat,
               lon,
               fullAddress,
+              population = 0,
+              type = "",
+              feature_code = "",
+              importance = 0,
             ) => {
               let safeCity = (cityName || "Unknown")
-                .replace(/[0-9]/g, "")
                 .replace(/^[,\s\-]+|[,\s\-]+$/g, "")
                 .trim();
               if (!safeCity || safeCity.toLowerCase() === "unknown") return;
 
               let safeDistrict = (district || "")
-                .replace(/[0-9]/g, "")
                 .replace(/^[,\s\-]+|[,\s\-]+$/g, "")
                 .trim();
               let safeAdmin = (admin1 || "")
-                .replace(/[0-9]/g, "")
                 .replace(/^[,\s\-]+|[,\s\-]+$/g, "")
                 .trim();
               let safeCountry = country || "";
@@ -1052,63 +1266,208 @@
                   .filter(Boolean)
                   .join(",<br>");
 
-              const locationKey = `${safeCity.toLowerCase()}-${(parseFloat(lat) || 0).toFixed(1)}-${(parseFloat(lon) || 0).toFixed(1)}`;
+              const lowerCity = safeCity.toLowerCase();
+              const lowerQuery = query.toLowerCase();
+              const blacklist = [
+                "airport",
+                "terminal",
+                "railway",
+                "station",
+                "road",
+                "street",
+                "highway",
+                "university",
+                "hospital",
+                "clinic",
+                "school",
+                "main road",
+                "bus stop",
+              ];
+              if (
+                blacklist.some((word) =>
+                  new RegExp(`\\b${word}\\b`).test(lowerCity),
+                )
+              )
+                return;
+              if (lowerCity.includes(" from ") && lowerCity.includes(" to "))
+                return;
 
-              if (!seenLocations.has(locationKey)) {
-                seenLocations.add(locationKey);
+              let score = 0;
+              if (lowerCity === lowerQuery) {
+                score += 400;
+              } else if (lowerCity.startsWith(lowerQuery)) {
+                score += 200;
+              } else if (lowerCity.includes(lowerQuery)) {
+                score += 50;
+              }
+
+              if (
+                type === "city" ||
+                type === "administrative" ||
+                feature_code.startsWith("PPL")
+              ) {
+                score += 150;
+                if (
+                  feature_code === "PPLC" ||
+                  feature_code === "PPLA" ||
+                  feature_code === "PPLA2"
+                )
+                  score += 150;
+              } else if (type === "town") {
+                score += 50;
+              } else if (type === "village") {
+                score -= 100;
+              } else if (type === "hamlet" || type === "suburb") {
+                score -= 200;
+              }
+
+              if (population > 0) {
+                score += Math.min(300, Math.log10(population) * 40);
+              } else if (importance > 0) {
+                score += importance * 300;
+              }
+
+              const cLat = Number(lat);
+              const cLon = Number(lon);
+              if (!Number.isFinite(cLat) || !Number.isFinite(cLon)) return;
+
+              const existingIdx = uniqueResults.findIndex((res) => {
+                const latDiff = Math.abs(res.lat - cLat);
+                const lonDiff = Math.abs(res.lon - cLon);
+                const isSameCountry = res.country === safeCountry;
+                const isSameAdmin = res.admin1 === safeAdmin;
+                return (
+                  res.name.toLowerCase() === lowerCity &&
+                  ((latDiff < 0.02 && lonDiff < 0.02) ||
+                    (isSameCountry &&
+                      isSameAdmin &&
+                      latDiff < 0.1 &&
+                      lonDiff < 0.1))
+                );
+              });
+
+              if (existingIdx > -1) {
+                if (score > uniqueResults[existingIdx].score) {
+                  uniqueResults[existingIdx] = {
+                    name: safeCity,
+                    district: safeDistrict,
+                    admin1: safeAdmin,
+                    country: safeCountry,
+                    lat: cLat,
+                    lon: cLon,
+                    fullAddress: resolvedFullAddr,
+                    score: score,
+                  };
+                }
+              } else {
                 uniqueResults.push({
                   name: safeCity,
                   district: safeDistrict,
                   admin1: safeAdmin,
                   country: safeCountry,
-                  lat: lat,
-                  lon: lon,
+                  lat: cLat,
+                  lon: cLon,
                   fullAddress: resolvedFullAddr,
+                  score: score,
                 });
               }
             };
 
-            if (nomRes.status === "fulfilled" && nomRes.value.ok !== false) {
-              const nomData = await nomRes.value.json();
-              if (nomData && nomData.length) {
-                nomData.forEach((city) => {
-                  let cName = city.name;
-                  if (!cName || /\d/.test(cName)) {
-                    cName = city.address
-                      ? city.address.village ||
-                        city.address.town ||
-                        city.address.city ||
-                        city.address.hamlet ||
-                        city.address.suburb
-                      : "";
-                  }
-                  if (!cName && city.display_name) {
-                    const parts = city.display_name.split(",");
-                    const textParts = parts
-                      .map((p) => p.trim())
-                      .filter((p) => !/\d/.test(p));
-                    cName = textParts.length > 0 ? textParts[0] : "Unknown";
-                  }
-                  const cAdmin = city.address
-                    ? city.address.state ||
-                      city.address.county ||
-                      city.address.region ||
-                      ""
-                    : "";
-                  const cCountry = city.address
-                    ? city.address.country || ""
-                    : "";
+            let primarySuccess = false;
 
-                  let parts = [cName];
-                  let district = "";
-                  if (city.address) {
-                    let addr = city.address;
-                    let mandal =
-                      addr.county || addr.municipality || addr.suburb || "";
-                    district = addr.state_district || addr.district || "";
-                    let state = addr.state || addr.region || "";
-                    let postcode = addr.postcode || "";
-                    let country = addr.country || "";
+            if (isCoord) {
+              const lat = parseFloat(isCoord[1]);
+              const lon = parseFloat(isCoord[2]);
+              if (lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
+                const owmGeoRes = await fetch(
+                  window.getWeatherEndpoint("geo_reverse", {
+                    lat: lat,
+                    lon: lon,
+                  }),
+                  { signal },
+                ).catch((e) => {
+                  if (e.name === "AbortError") throw e;
+                  return null;
+                });
+
+                if (owmGeoRes && owmGeoRes.ok) {
+                  const owmGeoData = await owmGeoRes.json();
+                  if (owmGeoData && owmGeoData.length > 0) {
+                    const loc = owmGeoData[0];
+                    let fullAddr = [loc.name, loc.state, loc.country]
+                      .filter(Boolean)
+                      .join(",<br>");
+                    addResult(
+                      loc.name,
+                      "",
+                      loc.state,
+                      loc.country,
+                      lat,
+                      lon,
+                      fullAddr,
+                      0,
+                      "city",
+                      "",
+                      999,
+                    );
+                    primarySuccess = true;
+                  }
+                }
+              }
+            } else if (isZip) {
+              const owmZipRes = await fetch(
+                window.getWeatherEndpoint("geo_zip", {
+                  zip: encodeURIComponent(query),
+                }),
+                { signal },
+              ).catch((e) => {
+                if (e.name === "AbortError") throw e;
+                return null;
+              });
+
+              if (owmZipRes && owmZipRes.ok) {
+                const owmZipData = await owmZipRes.json();
+                if (owmZipData && owmZipData.name) {
+                  let countryFull = owmZipData.country || "";
+                  let fullAddr = [owmZipData.name, query, countryFull]
+                    .filter(Boolean)
+                    .join(",<br>");
+                  addResult(
+                    owmZipData.name,
+                    "",
+                    "",
+                    owmZipData.country,
+                    owmZipData.lat,
+                    owmZipData.lon,
+                    fullAddr,
+                    10000,
+                    "city",
+                  );
+                  primarySuccess = true;
+                }
+              }
+            } else {
+              const omRes = await fetch(
+                `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=20&language=en&format=json`,
+                { signal },
+              ).catch((e) => {
+                if (e.name === "AbortError") throw e;
+                return null;
+              });
+
+              if (omRes && omRes.ok) {
+                const omData = await omRes.json();
+                if (omData.results && omData.results.length) {
+                  omData.results.forEach((city) => {
+                    let parts = [city.name];
+                    let mandal = city.admin3 || city.admin4 || "";
+                    let district = city.admin2 || "";
+                    let state = city.admin1 || "";
+                    let postcode =
+                      city.postcodes && city.postcodes.length > 0
+                        ? city.postcodes[0]
+                        : "";
+                    let countryFull = city.country || "";
 
                     if (mandal && !parts.includes(mandal)) parts.push(mandal);
                     if (district && !parts.includes(district))
@@ -1118,176 +1477,128 @@
                     } else if (postcode && !parts.includes(postcode)) {
                       parts.push(postcode);
                     }
-                    if (country && !parts.includes(country))
-                      parts.push(country);
-                  }
-                  let fullAddr = parts.filter(Boolean).join(",<br>");
-                  addResult(
-                    cName,
-                    district,
-                    cAdmin,
-                    cCountry,
-                    city.lat,
-                    city.lon,
-                    fullAddr,
-                  );
-                });
+                    if (countryFull && !parts.includes(countryFull))
+                      parts.push(countryFull);
+                    let fullAddr = parts.filter(Boolean).join(",<br>");
+                    addResult(
+                      city.name,
+                      district,
+                      city.admin1,
+                      city.country || city.country_code,
+                      city.latitude,
+                      city.longitude,
+                      fullAddr,
+                      city.population || 0,
+                      "",
+                      city.feature_code || "",
+                    );
+                  });
+                }
+
+                const bestScore =
+                  uniqueResults.length > 0
+                    ? Math.max(...uniqueResults.map((r) => r.score))
+                    : 0;
+                if (uniqueResults.length >= 5 || bestScore >= 800) {
+                  primarySuccess = true;
+                }
               }
             }
 
-            if (
-              photonRes &&
-              photonRes.status === "fulfilled" &&
-              photonRes.value.ok !== false
-            ) {
-              if (photonRes.value.status !== "skipped") {
-                const photonData = await photonRes.value.json();
-                if (
-                  photonData &&
-                  photonData.features &&
-                  photonData.features.length
-                ) {
-                  photonData.features.forEach((feature) => {
-                    let props = feature.properties;
-                    if (!props.name) return;
-                    let cName = props.name;
-                    let cAdmin = props.state || props.county || "";
-                    let cCountry = props.country || "";
-                    if (!feature.geometry || !feature.geometry.coordinates)
-                      return;
-                    let lat = feature.geometry.coordinates[1];
-                    let lon = feature.geometry.coordinates[0];
+            if (!primarySuccess) {
+              const promises = [
+                fetch(
+                  `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=15`,
+                  { signal },
+                ),
+                fetch(
+                  window.getWeatherEndpoint("geo_direct", {
+                    q: encodeURIComponent(query),
+                    limit: 10,
+                  }),
+                  { signal },
+                ),
+              ];
 
+              const [photonRes, owmRes] = await Promise.all(
+                promises.map((p) =>
+                  p.catch((e) => {
+                    if (e.name === "AbortError") throw e;
+                    return e;
+                  }),
+                ),
+              );
+
+              if (photonRes && photonRes.ok) {
+                const photonData = await photonRes.json();
+                if (photonData && photonData.features) {
+                  photonData.features.forEach((f) => {
+                    const p = f.properties;
+                    let cName = p.name || "";
+                    if (!cName) return;
+                    let district = p.county || "";
+                    let state = p.state || "";
+                    let country = p.country || "";
                     let parts = [cName];
-                    if (props.district && !parts.includes(props.district))
-                      parts.push(props.district);
-                    if (cAdmin && !parts.includes(cAdmin)) parts.push(cAdmin);
-                    if (cCountry && !parts.includes(cCountry))
-                      parts.push(cCountry);
-
+                    if (district && !parts.includes(district))
+                      parts.push(district);
+                    if (state && !parts.includes(state)) {
+                      parts.push(p.postcode ? `${state} ${p.postcode}` : state);
+                    } else if (p.postcode && !parts.includes(p.postcode)) {
+                      parts.push(p.postcode);
+                    }
+                    if (country && !parts.includes(country))
+                      parts.push(country);
                     let fullAddr = parts.filter(Boolean).join(",<br>");
-                    let district = props.district || "";
                     addResult(
                       cName,
                       district,
-                      cAdmin,
-                      cCountry,
-                      lat,
-                      lon,
+                      state,
+                      country,
+                      f.geometry.coordinates[1],
+                      f.geometry.coordinates[0],
                       fullAddr,
+                      0,
+                      p.type || p.osm_value || "",
+                    );
+                  });
+                }
+              }
+
+              if (owmRes && owmRes.ok) {
+                const owmData = await owmRes.json();
+                if (owmData && owmData.length) {
+                  owmData.forEach((city) => {
+                    let parts = [city.name];
+                    if (city.state && !parts.includes(city.state))
+                      parts.push(city.state);
+                    if (city.country && !parts.includes(city.country))
+                      parts.push(city.country);
+                    let fullAddr = parts.filter(Boolean).join(",<br>");
+                    addResult(
+                      city.name,
+                      "",
+                      city.state,
+                      city.country,
+                      city.lat,
+                      city.lon,
+                      fullAddr,
+                      0,
+                      "city",
                     );
                   });
                 }
               }
             }
 
-            if (omRes.status === "fulfilled" && omRes.value.ok !== false) {
-              const omData = await omRes.value.json();
-              if (omData.results && omData.results.length) {
-                omData.results.forEach((city) => {
-                  let parts = [city.name];
-                  let mandal = city.admin3 || city.admin4 || "";
-                  let district = city.admin2 || "";
-                  let state = city.admin1 || "";
-                  let postcode =
-                    city.postcodes && city.postcodes.length > 0
-                      ? city.postcodes[0]
-                      : "";
-                  let countryFull = city.country || "";
+            if (requestId !== window.currentAutocompleteRequestId) return;
 
-                  if (mandal && !parts.includes(mandal)) parts.push(mandal);
-                  if (district && !parts.includes(district))
-                    parts.push(district);
-                  if (state && !parts.includes(state)) {
-                    parts.push(postcode ? `${state} ${postcode}` : state);
-                  } else if (postcode && !parts.includes(postcode)) {
-                    parts.push(postcode);
-                  }
-                  if (countryFull && !parts.includes(countryFull))
-                    parts.push(countryFull);
-                  let fullAddr = parts.filter(Boolean).join(",<br>");
-                  addResult(
-                    city.name,
-                    district,
-                    city.admin1,
-                    city.country || city.country_code,
-                    city.latitude,
-                    city.longitude,
-                    fullAddr,
-                  );
-                });
-              }
-            }
+            uniqueResults.sort((a, b) => b.score - a.score);
+            const topResults = uniqueResults.slice(0, 15);
 
-            if (owmRes.status === "fulfilled" && owmRes.value.ok !== false) {
-              const owmData = await owmRes.value.json();
-              if (owmData && owmData.length) {
-                owmData.forEach((city) => {
-                  let countryFull = city.country || "";
-                  if (countryFull && countryFull.length === 2) {
-                    try {
-                      const regionNames = new Intl.DisplayNames(["en"], {
-                        type: "region",
-                      });
-                      countryFull =
-                        regionNames.of(countryFull.toUpperCase()) ||
-                        countryFull;
-                    } catch (e) {}
-                  }
-                  let parts = [city.name];
-                  if (city.state && !parts.includes(city.state))
-                    parts.push(city.state);
-                  if (countryFull && !parts.includes(countryFull))
-                    parts.push(countryFull);
-                  let fullAddr = parts.filter(Boolean).join(",<br>");
-                  addResult(
-                    city.name,
-                    "",
-                    city.state,
-                    city.country,
-                    city.lat,
-                    city.lon,
-                    fullAddr,
-                  );
-                });
-              }
-            }
-
-            if (
-              owmZipRes &&
-              owmZipRes.status === "fulfilled" &&
-              owmZipRes.value.ok !== false
-            ) {
-              const owmZipData = await owmZipRes.value.json();
-              if (owmZipData && owmZipData.name) {
-                let countryFull = owmZipData.country || "";
-                if (countryFull && countryFull.length === 2) {
-                  try {
-                    const regionNames = new Intl.DisplayNames(["en"], {
-                      type: "region",
-                    });
-                    countryFull =
-                      regionNames.of(countryFull.toUpperCase()) || countryFull;
-                  } catch (e) {}
-                }
-                let fullAddr = [owmZipData.name, query, countryFull]
-                  .filter(Boolean)
-                  .join(",<br>");
-                addResult(
-                  owmZipData.name,
-                  "",
-                  "",
-                  owmZipData.country,
-                  owmZipData.lat,
-                  owmZipData.lon,
-                  fullAddr,
-                );
-              }
-            }
-
-            if (uniqueResults.length > 0) {
+            if (topResults.length > 0) {
               suggestionsBox.innerHTML = "";
-              uniqueResults.forEach((city, index) => {
+              topResults.forEach((city, index) => {
                 const suggestionItem = document.createElement("div");
                 suggestionItem.className = "suggestion-item";
 
@@ -1301,14 +1612,35 @@
                 const cityName = city.name;
                 const subName = `${districtInfo}${adminInfo}${city.country}`;
 
-                const safeQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+                const esc =
+                  window.escapeHTML ||
+                  ((s) =>
+                    (s || "").replace(
+                      /[&<>'"]/g,
+                      (c) =>
+                        ({
+                          "&": "&amp;",
+                          "<": "&lt;",
+                          ">": "&gt;",
+                          "'": "&#39;",
+                          '"': "&quot;",
+                        })[c] || c,
+                    ));
+                const escapedCityName = esc(cityName);
+                const escapedSubName = esc(subName);
+                const escapedQuery = esc(query);
+
+                const safeQuery = escapedQuery.replace(
+                  /[.*+?^${}()|[\]\\]/g,
+                  "\\$&",
+                );
                 const regex = new RegExp(`(${safeQuery})`, "gi");
 
-                const highlightedCity = cityName.replace(
+                const highlightedCity = escapedCityName.replace(
                   regex,
                   "<strong>$1</strong>",
                 );
-                const highlightedSub = subName.replace(
+                const highlightedSub = escapedSubName.replace(
                   regex,
                   "<strong>$1</strong>",
                 );
@@ -1337,6 +1669,8 @@
                     city.lon,
                     city.name,
                     city.country,
+                    false,
+                    true,
                   );
                 });
 
@@ -1347,6 +1681,11 @@
                 '<div class="suggestion-item" style="opacity: 0.7; cursor: default;">No results found</div>';
             }
           } catch (error) {
+            if (
+              error.name === "AbortError" ||
+              String(error).includes("aborted")
+            )
+              return;
             console.error("Error fetching suggestions:", error);
             suggestionsBox.innerHTML =
               '<div class="suggestion-item" style="opacity: 0.7; cursor: default; color: #ffcccc;">Error loading suggestions: ' +
@@ -1375,7 +1714,7 @@
               items[currentFocus].click();
             }
           } else {
-            getWeather();
+            getWeather(false, null, null, null, null, false, true);
           }
         }
       });
@@ -1395,7 +1734,8 @@
       }
 
       async function useCurrentLocation() {
-        if (startupInterval) clearInterval(startupInterval);
+        const currentReqId = ++window.locationRequestId;
+
         if (!navigator.onLine) {
           showMessage(
             "No internet connection",
@@ -1412,6 +1752,10 @@
 
           navigator.geolocation.getCurrentPosition(
             async (position) => {
+              if (window.locationRequestId !== currentReqId) {
+                btn.classList.remove("loading-tada");
+                return;
+              }
               const lat = position.coords.latitude;
               const lon = position.coords.longitude;
               try {
@@ -1422,6 +1766,9 @@
                   }),
                 );
                 const data = await res.json();
+                if (window.locationRequestId !== currentReqId) {
+                  return;
+                }
                 if (data && data.length > 0) {
                   document.getElementById("city").value = data[0].name;
 
@@ -1456,6 +1803,8 @@
                     lon,
                     data[0].name,
                     data[0].country,
+                    false,
+                    true,
                   );
                 } else {
                   showMessage(
@@ -1473,6 +1822,7 @@
               }
             },
             (error) => {
+              if (window.locationRequestId !== currentReqId) return;
               btn.classList.remove("loading-tada");
               if (error.code === 1) {
                 showMessage(
@@ -1501,18 +1851,26 @@
         }
       }
 
-      /* Displays an error message box under the search bar. */
       function showMessage(message, reason) {
+        const escapeHTML = (str) => {
+          if (!str) return "";
+          return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+        };
         const defaultReason =
           "This might be due to a temporary network issue, an invalid entry, or an API limitation.";
         const msgBox = document.getElementById("message-box");
         msgBox.innerHTML = `
                   <div style="display: flex; align-items: flex-start; font-weight: bold; text-align: left;">
                       <i class='bx bx-error-alt' style='font-size: 1.15rem; margin-right: 6px; flex-shrink: 0; margin-top: 2px;'></i>
-                      <span style="word-break: break-word; line-height: 1.3;">${message}</span>
+                      <span style="word-break: break-word; line-height: 1.3;">${escapeHTML(message)}</span>
                   </div>
                   <div style="font-size: 0.45rem; opacity: 0.75; margin-top: 4px; padding-left: 25px; line-height: 1.3; text-align: left; word-break: break-word;">
-                      Why this happens? ${reason || defaultReason}
+                      Why this happens? ${escapeHTML(reason || defaultReason)}
                   </div>
               `;
         msgBox.style.display = "block";
@@ -1574,7 +1932,7 @@
                   sBox.classList.add("s-closing");
                   setTimeout(() => {
                     sBox.classList.remove("s-closing");
-                  }, 200);
+                  }, 400);
                 }
               }
             });
