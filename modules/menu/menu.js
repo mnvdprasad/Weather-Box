@@ -32,7 +32,11 @@ function toggleAbout(skipPushState = false) {
       resultContainer.style.display = isActive ? "none" : "block";
     const homeResult = document.getElementById("home-result");
     if (homeResult)
-      homeResult.style.display = isActive ? "none" : (window.location.hash.startsWith("#weather/") ? "none" : "block");
+      homeResult.style.display = isActive
+        ? "none"
+        : window.location.hash.startsWith("#weather/")
+          ? "none"
+          : "block";
     if (timeDisplay) timeDisplay.style.display = isActive ? "none" : "block";
     if (settingsBtn) settingsBtn.style.display = isActive ? "none" : "block";
 
@@ -44,7 +48,7 @@ function toggleAbout(skipPushState = false) {
         weatherBox.classList.remove("about-mode");
       }
     }
-    
+
     if (typeof window.pushAppState === "function" && !skipPushState) {
       window.pushAppState(isActive ? "#about" : "#home");
     }
@@ -85,7 +89,11 @@ function togglePrivacy(skipPushState = false) {
       resultContainer.style.display = isActive ? "none" : "block";
     const homeResult = document.getElementById("home-result");
     if (homeResult)
-      homeResult.style.display = isActive ? "none" : (window.location.hash.startsWith("#weather/") ? "none" : "block");
+      homeResult.style.display = isActive
+        ? "none"
+        : window.location.hash.startsWith("#weather/")
+          ? "none"
+          : "block";
     if (timeDisplay) timeDisplay.style.display = isActive ? "none" : "block";
     if (settingsBtn) settingsBtn.style.display = isActive ? "none" : "block";
 
@@ -138,7 +146,11 @@ function toggleTerms(skipPushState = false) {
       resultContainer.style.display = isActive ? "none" : "block";
     const homeResult = document.getElementById("home-result");
     if (homeResult)
-      homeResult.style.display = isActive ? "none" : (window.location.hash.startsWith("#weather/") ? "none" : "block");
+      homeResult.style.display = isActive
+        ? "none"
+        : window.location.hash.startsWith("#weather/")
+          ? "none"
+          : "block";
     if (timeDisplay) timeDisplay.style.display = isActive ? "none" : "block";
     if (settingsBtn) settingsBtn.style.display = isActive ? "none" : "block";
 
@@ -165,52 +177,55 @@ const aboutUsHTML = `
         </div>
         <div class="about-content">
           <h2>About Us</h2>
+          
           <h3>The Weather Box</h3>
-          <p>WeatherBox is a modern weather platform designed to provide accurate, accessible, and visually engaging weather information for people around the world.</p>
-          <p>Our mission is simple: transform complex weather data into information that is easy to understand, useful in daily life, and enjoyable to explore.</p>
-          <p>Weather affects nearly every aspect of our lives—from travel and commuting to outdoor activities, work, health, and safety. WeatherBox was created to help users make informed decisions by presenting real-time weather conditions, forecasts, and weather-related insights through an intuitive and carefully crafted experience.</p>
-          <p>Unlike traditional weather websites that focus solely on data, WeatherBox combines reliable weather information with interactive visual design, animated weather environments, and customizable settings that adapt to individual user preferences.</p>
+          <p><strong>Weather Box</strong> is a modern, highly responsive web platform designed to provide accurate, accessible, and visually engaging meteorological data for users across the globe.</p>
+          <p>Our core mission is straightforward: to transform complex atmospheric data into clear, actionable information that is intuitive to understand, highly useful for daily planning, and enjoyable to interact with.</p>
+          <p>Weather fundamentally impacts nearly every aspect of daily life—from commuting and travel to outdoor activities, health, and general safety. Weather Box was meticulously crafted to empower users to make informed decisions by presenting real-time conditions, detailed forecasts, and deep environmental insights through a polished, user-centric experience.</p>
+          <p>Unlike traditional, static weather websites that rely exclusively on raw text data, Weather Box bridges the gap by combining reliable meteorological information with immersive visual design, animated dynamic weather environments, and a comprehensive suite of customizable settings tailored to individual preferences.</p>
 
           <h3>What We Provide</h3>
-          <p>WeatherBox offers a range of weather-related services, including:</p>
+          <p>Weather Box offers an extensive array of weather-related services and features, including:</p>
           <ul>
-          <li>Current weather conditions</li>
-          <li>Location-based weather information</li>
-          <li>Forecast data</li>
-          <li>Weather measurements and atmospheric conditions</li>
-          <li>Location search and weather lookup tools</li>
-          <li>Unit customization options</li>
-          <li>Time and weather visualization features</li>
-          <li>Interactive weather displays and animations</li>
+            <li>Real-time, hyper-local current weather conditions</li>
+            <li>Comprehensive short-term and extended forecast data</li>
+            <li>In-depth atmospheric measurements (e.g., humidity, UV index, air quality, visibility)</li>
+            <li>Advanced location search, autocomplete, and mapping tools</li>
+            <li>Extensive unit customization options (Celsius/Fahrenheit, metric/imperial)</li>
+            <li>Time and weather visualization tools synchronizing with local timezones</li>
+            <li>Interactive, hardware-accelerated weather displays and dynamic background animations</li>
           </ul>
-          <p>Our platform is continuously improved to provide a faster, more accurate, and more enjoyable weather experience.</p>
+          <p>Our platform architecture is continuously monitored and refined to ensure a faster, more accurate, and seamless weather tracking experience.</p>
           
           <h3>Our Commitment</h3>
-          <p>We are committed to:</p>
+          <p>At Weather Box, we are deeply committed to the following principles:</p>
           <ul>
-          <li>Providing clear and understandable weather information</li>
-          <li>Respecting user privacy</li>
-          <li>Maintaining transparency regarding data sources</li>
-          <li>Delivering a reliable and secure service</li>
-          <li>Continuously improving the quality and usability of the platform</li>
+            <li><strong>Clarity:</strong> Providing clear, understandable, and accessible weather information for everyone.</li>
+            <li><strong>Privacy:</strong> Respecting user privacy by minimizing data collection and keeping preferences local.</li>
+            <li><strong>Transparency:</strong> Maintaining full transparency regarding our third-party data sources and algorithms.</li>
+            <li><strong>Reliability:</strong> Delivering a secure, stable, and high-performance web service.</li>
+            <li><strong>Innovation:</strong> Continuously improving the quality, accessibility, and visual aesthetics of the platform.</li>
           </ul>
-          <p>WeatherBox is intended to serve users ranging from casual weather enthusiasts to individuals who rely on weather information in their daily planning.</p>
+          <p>Weather Box is designed to scale and serve a diverse user base, ranging from casual weather enthusiasts checking the daily outlook to individuals and professionals who rely heavily on precise weather data for critical daily planning.</p>
 
-          <h3>Data Sources</h3>
-          <p>WeatherBox aggregates weather information from trusted third-party providers.</p>
-          <p>Data displayed within the Service may include information supplied by:</p>
+          <h3>Data Sources & Transparency</h3>
+          <p>To ensure high reliability, Weather Box aggregates its weather intelligence from industry-leading, trusted third-party meteorological providers.</p>
+          <p>Data displayed within our platform is directly supplied and powered by:</p>
           <ul>
-          <li>OpenWeather</li>
-          <li>Open-Meteo</li>
-          <li>Browser Geolocation Services</li>
-          <li>Device Location Services</li>
-          <li>Other weather and environmental data providers that may be integrated in the future</li>
+            <li><a href="https://openweathermap.org/" target="_blank" style="color: #60a5fa; text-decoration: none;">OpenWeather</a></li>
+            <li><a href="https://open-meteo.com/" target="_blank" style="color: #60a5fa; text-decoration: none;">Open-Meteo</a></li>
+            <li><a href="https://www.weatherapi.com/" target="_blank" style="color: #60a5fa; text-decoration: none;">WeatherAPI.com</a></li>
+            <li><a href="https://www.windy.com/" target="_blank" style="color: #60a5fa; text-decoration: none;">Windy.com</a> (Interactive Radar/Maps)</li>
+            <li>Browser and Device Geolocation Services</li>
+            <li>OpenStreetMap, Photon, and other supplementary mapping data providers</li>
           </ul>
-          <p>WeatherBox does not independently generate meteorological forecasts. Weather information is provided by external data providers and is presented through the WeatherBox platform.</p>
-          <p>While we strive to display information accurately and promptly, WeatherBox cannot guarantee the completeness, accuracy, or uninterrupted availability of third-party data.</p>
-          <p>Users should consult official meteorological and governmental weather authorities when weather information is required for safety-critical decisions.</p>
+          <p><em>Disclaimer: Weather Box functions as a data aggregator and presentation platform; we do not independently generate meteorological forecasts. While our systems strive to fetch and display information accurately and promptly, we cannot guarantee the absolute completeness or uninterrupted availability of third-party API data. Users should always consult official governmental meteorological authorities when making safety-critical or emergency response decisions.</em></p>
 
-          <p>Thank you for using WeatherBox.</p>
+          <h3>Open Source & Community</h3>
+          <p>Weather Box operates as a transparent, open-source project. We believe the best software is built collaboratively through community feedback, testing, and contributions. You are encouraged to explore our source code, report any issues, or contribute directly to the project's development on <a href="https://github.com/mnvdprasad/Weather-Box" target="_blank" style="color: #60a5fa; text-decoration: none;">GitHub</a>.</p>
+          <p>Experience the production web application live at: <a href="https://weatherboxlive.vercel.app" target="_blank" style="color: #60a5fa; text-decoration: none;">weatherboxlive.vercel.app</a></p>
+
+          <p style="margin-top: 20px; font-weight: bold; font-size: 1.1em;">Thank you for choosing Weather Box!</p>
         </div>
 `;
 
@@ -222,125 +237,111 @@ const privacyPolicyHTML = `
         </div>
         <div class="about-content">
           <h2>Privacy Policy</h2>
-          <p><em>Effective Date: June 2026</em></p>
-          <p>WeatherBox respects your privacy and is committed to protecting your information.</p>
-          <p>This Privacy Policy explains what information we collect, how we use it, and the choices available to you when using our Service.</p>
+          <p><em>Effective Date: September 2026</em></p>
+          <p>At <strong>Weather Box</strong>, we respect your privacy and are deeply committed to protecting your personal information. This Privacy Policy comprehensively outlines the types of information we collect, the purposes for which it is used, and the rights and choices available to you as a user of our Service.</p>
           
           <h3>1. Information We Collect</h3>
           <p><strong>Information You Provide</strong></p>
-          <p>When using WeatherBox, you may voluntarily provide:</p>
+          <p>When interacting with Weather Box, you may voluntarily provide information to enhance your experience. This includes:</p>
           <ul>
-            <li>Location search queries</li>
-            <li>Feedback or communications</li>
-            <li>User preferences and settings</li>
-            <li>Analyze usage trends.</li>
+            <li>Location search queries and saved locations</li>
+            <li>Feedback, support requests, or communications</li>
+            <li>Customized user preferences and UI settings</li>
           </ul>
           <p><strong>Location Information</strong></p>
-          <p>If you choose to enable location services, WeatherBox may access your device's geographic location to provide local weather information.</p>
-          <p>Location access occurs only after permission is granted through your browser or device.</p>
+          <p>To provide accurate, localized weather data, Weather Box may request access to your device's geographic location. This access is entirely optional and only occurs after explicit permission is granted through your web browser or device settings. You may revoke this permission at any time.</p>
           <p><strong>Automatically Collected Information</strong></p>
-          <p>When you access the Service, certain technical information may be collected automatically, including:</p>
+          <p>When you access the Service, certain technical data is collected automatically to ensure proper functionality and security. This may include:</p>
           <ul>
             <li>IP address</li>
             <li>Browser type and version</li>
-            <li>Device type</li>
+            <li>Device type and hardware specifications</li>
             <li>Operating system</li>
             <li>Screen resolution</li>
             <li>Language preferences</li>
-            <li>Referring pages</li>
-            <li>Usage statistics</li>
-            <li>Performance and diagnostic information</li>
+            <li>Referring pages and usage statistics</li>
+            <li>Performance metrics and diagnostic information</li>
           </ul>
 
           <h3>2. How We Use Information</h3>
-          <p>We use information to:</p>
+          <p>We process the collected information strictly for the following purposes:</p>
           <ul>
-            <li>Deliver weather forecasts and weather-related services</li>
-            <li>Provide location-based weather information</li>
-            <li>Remember user preferences and settings</li>
-            <li>Improve website performance and usability</li>
-            <li>Maintain service security</li>
-            <li>Diagnose technical issues</li>
-            <li>Prevent abuse and unauthorized activity</li>
-            <li>Analyze usage trends</li>
+            <li>To deliver accurate weather forecasts and related environmental services</li>
+            <li>To provide precise location-based weather updates</li>
+            <li>To remember your customized user preferences and settings across sessions</li>
+            <li>To optimize website performance, scalability, and overall usability</li>
+            <li>To maintain the security and integrity of our platform</li>
+            <li>To diagnose technical issues and prevent unauthorized or abusive activity</li>
+            <li>To analyze aggregated usage trends to guide future feature development</li>
           </ul>
 
           <h3>3. User Preferences and Local Storage</h3>
-          <p>WeatherBox may store certain settings locally within your browser or device.</p>
-          <p>Examples include:</p>
+          <p>Weather Box utilizes local storage mechanisms within your browser to persistently save your personal preferences. This ensures continuity and a seamless experience between visits. Data stored locally includes:</p>
           <ul>
-            <li>Temperature unit preferences</li>
-            <li>Wind speed units</li>
-            <li>Pressure units</li>
+            <li>Temperature unit preferences (Celsius/Fahrenheit)</li>
+            <li>Wind speed and pressure metrics</li>
             <li>Visibility units</li>
-            <li>Time format settings</li>
-            <li>User interface preferences</li>
+            <li>Time format settings (12-hour/24-hour)</li>
+            <li>User interface themes and visual preferences</li>
           </ul>
-          <p>These settings are stored to improve user experience and provide continuity between visits.</p>
+          <p>We prioritize your privacy by keeping these preferences locally on your device rather than transmitting them to external servers.</p>
 
           <h3>4. Cookies and Similar Technologies</h3>
-          <p>WeatherBox may use cookies, local storage technologies, and similar mechanisms to:</p>
+          <p>Weather Box may employ cookies, local storage technologies, and similar tracking mechanisms to:</p>
           <ul>
-            <li>Maintain functionality</li>
-            <li>Store user preferences</li>
-            <li>Improve performance</li>
-            <li>Analyze usage patterns</li>
-            <li>Enhance user experience</li>
+            <li>Maintain essential site functionality</li>
+            <li>Store user preferences safely</li>
+            <li>Monitor and improve application performance</li>
+            <li>Analyze user engagement patterns</li>
           </ul>
-          <p>You may control cookie behavior through your browser settings. Disabling certain technologies may affect functionality.</p>
+          <p>You maintain full control over cookie behavior through your browser's privacy settings. Please note that disabling certain storage technologies may negatively impact the functionality of the Service.</p>
 
           <h3>5. Third-Party Services</h3>
-          <p>WeatherBox may use third-party providers that process information on our behalf.</p>
-          <p>These providers may include:</p>
+          <p>To provide highly accurate and comprehensive meteorological data, Weather Box integrates with trusted third-party service providers. These entities process information on our behalf and may include:</p>
           <ul>
-            <li>Weather data providers</li>
-            <li>Geolocation services</li>
-            <li>Hosting providers</li>
-            <li>Content delivery networks (CDNs)</li>
-            <li>Analytics services</li>
+            <li><strong>Weather Data Providers:</strong> <a href="https://openweathermap.org/" target="_blank" style="color: #60a5fa; text-decoration: none;">OpenWeather</a>, <a href="https://open-meteo.com/" target="_blank" style="color: #60a5fa; text-decoration: none;">Open-Meteo</a>, <a href="https://www.weatherapi.com/" target="_blank" style="color: #60a5fa; text-decoration: none;">WeatherAPI.com</a></li>
+            <li><strong>Interactive Mapping:</strong> <a href="https://www.windy.com/" target="_blank" style="color: #60a5fa; text-decoration: none;">Windy.com</a></li>
+            <li><strong>Geolocation Services:</strong> OpenStreetMap Nominatim, Photon, Open-Meteo Geocoding</li>
+            <li><strong>Hosting and Infrastructure Providers</strong></li>
+            <li><strong>Content Delivery Networks (CDNs)</strong></li>
           </ul>
-          <p>These providers process information according to their own privacy policies.</p>
+          <p>These third-party providers process your information in accordance with their own respective privacy policies and legal obligations.</p>
 
           <h3>6. Data Security</h3>
-          <p>WeatherBox implements reasonable technical and organizational safeguards designed to protect information from unauthorized access, disclosure, alteration, misuse, or destruction.</p>
-          <p>However, no method of transmission or storage can be guaranteed to be completely secure.</p>
+          <p>Weather Box implements robust technical, organizational, and administrative safeguards designed to protect your information against unauthorized access, accidental loss, alteration, misuse, or destruction.</p>
+          <p>However, no method of digital transmission or electronic storage can be guaranteed to be 100% secure. While we strive to use commercially acceptable means to protect your data, we cannot guarantee its absolute security.</p>
 
           <h3>7. Data Retention</h3>
-          <p>Information is retained only as long as reasonably necessary to:</p>
+          <p>We retain collected information only for as long as it is reasonably necessary to fulfill the purposes outlined in this policy, including:</p>
           <ul>
-            <li>Operate the Service</li>
-            <li>Comply with legal obligations</li>
-            <li>Resolve disputes</li>
-            <li>Enforce policies</li>
-            <li>Improve functionality</li>
+            <li>Operating and maintaining the Service</li>
+            <li>Complying with applicable legal obligations</li>
+            <li>Resolving disputes and enforcing our policies</li>
+            <li>Improving platform functionality</li>
           </ul>
 
           <h3>8. Children's Privacy</h3>
-          <p>WeatherBox is not specifically directed toward children under the age required by applicable law.</p>
-          <p>We do not knowingly collect personal information from children without appropriate legal authorization.</p>
+          <p>Weather Box is designed for a general audience and is not specifically directed toward children under the age required by applicable data protection laws. We do not knowingly collect, solicit, or maintain personal information from children without appropriate, verified parental or legal authorization.</p>
 
           <h3>9. Your Rights</h3>
-          <p>Depending on your jurisdiction, you may have rights regarding your personal information, including:</p>
+          <p>Depending on your jurisdiction and applicable data protection laws, you may possess specific rights regarding your personal information, which may include:</p>
           <ul>
-            <li>Access</li>
-            <li>Correction</li>
-            <li>Deletion</li>
-            <li>Restriction of processing</li>
-            <li>Objection to processing</li>
-            <li>Data portability where applicable</li>
+            <li>The right to access the data we hold about you</li>
+            <li>The right to correct inaccuracies</li>
+            <li>The right to request deletion of your personal data</li>
+            <li>The right to restrict or object to certain types of processing</li>
+            <li>The right to data portability</li>
           </ul>
-          <p>Requests may be submitted through available contact channels.</p>
+          <p>Requests to exercise these rights may be submitted through our official contact channels.</p>
 
           <h3>10. International Users</h3>
-          <p>WeatherBox may be accessed from multiple countries.</p>
-          <p>By using the Service, you acknowledge that information may be processed in jurisdictions different from your country of residence.</p>
+          <p>Weather Box operates globally and can be accessed from multiple countries. By using the Service, you acknowledge and consent that your information may be transferred to, processed, and stored in jurisdictions outside of your country of residence, where data protection laws may differ.</p>
 
           <h3>11. Changes to This Policy</h3>
-          <p>We may update this Privacy Policy periodically.</p>
-          <p>Updated versions will be posted on this page with a revised effective date.</p>
+          <p>We reserve the right to update or modify this Privacy Policy periodically to reflect changes in our practices, technological advancements, or legal requirements. Updated versions will be posted directly on this page, and the "Effective Date" at the top will be revised accordingly.</p>
 
-          <h3>12. Contact</h3>
-          <p>Questions regarding this Privacy Policy may be directed through the contact methods provided on the website.</p>
+          <h3>12. Contact Information</h3>
+          <p>If you have any questions, concerns, or requests regarding this Privacy Policy or our data practices, please contact us directly via our <a href="https://github.com/mnvdprasad/Weather-Box/issues" target="_blank" style="color: #60a5fa; text-decoration: none;">GitHub repository</a> or by opening a discussion thread.</p>
         </div>
 `;
 
@@ -352,101 +353,89 @@ const termsOfServiceHTML = `
         </div>
         <div class="about-content">
           <h2>Terms of Service</h2>
-          <p><em>Last Updated: June 2026</em></p>
-          <p>Welcome to Weather Box.</p>
-          <p>These Terms of Service ("Terms") govern your access to and use of the WeatherBox website, applications, services, and related features (collectively, the "Service").</p>
-          <p>By accessing or using WeatherBox, you agree to be bound by these Terms. If you do not agree with these Terms, you should discontinue use of the Service.</p>
+          <p><em>Last Updated: September 2026</em></p>
+          <p>Welcome to <strong>Weather Box</strong>.</p>
+          <p>These Terms of Service ("Terms") govern your access to and use of the Weather Box web application, services, data APIs, and related features (collectively, the "Service").</p>
+          <p>By accessing or using Weather Box, you agree to be bound by these Terms. If you do not agree with any part of these Terms, you must immediately discontinue your use of the Service.</p>
           
           <h3>1. Eligibility</h3>
-          <p>You may use WeatherBox only in compliance with applicable laws and regulations.</p>
-          <p>By using the Service, you represent that you have the legal capacity to enter into these Terms under the laws of your jurisdiction.</p>
+          <p>You may use Weather Box only in compliance with all applicable local, state, national, and international laws, rules, and regulations.</p>
+          <p>By using the Service, you represent and warrant that you possess the legal authority and capacity to enter into these Terms under the laws of your jurisdiction.</p>
           
           <h3>2. Description of Service</h3>
-          <p>WeatherBox provides weather-related information, forecasts, environmental conditions, location-based weather services, visual weather displays, and related informational tools.</p>
-          <p>The Service may use third-party data providers to supply weather and location information.</p>
-          <p>WeatherBox may modify, update, improve, suspend, or discontinue any portion of the Service at any time without prior notice.</p>
+          <p>Weather Box provides real-time meteorological data, localized weather forecasts, atmospheric metrics, dynamic visual weather displays, and related location-based search tools.</p>
+          <p>The Service integrates data from multiple third-party providers (e.g., OpenWeather, Open-Meteo, WeatherAPI, Windy.com) to present comprehensive weather dashboards and interactive maps.</p>
+          <p>We reserve the right to modify, update, improve, suspend, or discontinue any portion of the Service, its features, or its data sources at our sole discretion, at any time, and without prior notice.</p>
           
           <h3>3. Informational Nature of Weather Data</h3>
-          <p>Weather information is provided for general informational purposes only.</p>
-          <p>Although WeatherBox strives to present accurate and timely information, weather forecasts are inherently predictive and may contain inaccuracies, delays, interruptions, or errors.</p>
-          <p>Users should not rely solely on WeatherBox for decisions involving:</p>
+          <p>All weather information presented via the Service is provided strictly for general informational purposes.</p>
+          <p>Although Weather Box aggregates data from highly reputable sources to ensure accuracy, meteorological forecasting is inherently predictive and subject to rapid changes. Therefore, our data may occasionally contain inaccuracies, reporting delays, or temporary interruptions.</p>
+          <p>Users must <strong>never</strong> rely solely on Weather Box for decisions involving:</p>
           <ul>
-            <li>Personal safety</li>
-            <li>Emergency response</li>
-            <li>Aviation</li>
-            <li>Marine activities</li>
-            <li>Disaster preparedness</li>
-            <li>Severe weather events</li>
-            <li>Medical situations</li>
-            <li>Commercial operations where weather accuracy is critical</li>
+            <li>Personal safety or emergency response</li>
+            <li>Aviation, marine, or specialized outdoor activities</li>
+            <li>Severe weather preparation or disaster management</li>
+            <li>Medical situations affected by environmental conditions</li>
+            <li>Commercial operations where weather precision is mission-critical</li>
           </ul>
-          <p>Official government weather agencies and emergency management authorities should always be consulted when safety-related decisions are involved.</p>
+          <p>Always consult official governmental meteorological and emergency management authorities when safety-critical decisions are involved.</p>
           
           <h3>4. Location Services</h3>
-          <p>Certain features may request access to your device's location in order to provide localized weather information.</p>
-          <p>Location access is entirely optional.</p>
-          <p>If permission is granted, WeatherBox may use location information solely for providing relevant weather services and improving location-based functionality.</p>
-          <p>You may revoke location permissions at any time through your browser or device settings.</p>
+          <p>To provide highly localized weather forecasting, Weather Box may request access to your device's geolocation data.</p>
+          <p>This access is completely optional. If permission is granted via your web browser or operating system, Weather Box will utilize your location data exclusively to fetch relevant meteorological conditions.</p>
+          <p>You may revoke these location permissions at any time through your device or browser's privacy settings.</p>
           
           <h3>5. Acceptable Use</h3>
-          <p>You agree not to:</p>
+          <p>While interacting with the Service, you agree <strong>not</strong> to:</p>
           <ul>
-            <li>Violate any applicable law or regulation</li>
-            <li>Attempt unauthorized access to systems or networks</li>
-            <li>Interfere with the operation of the Service</li>
-            <li>Circumvent security mechanisms</li>
-            <li>Introduce malware, malicious code, or harmful software</li>
-            <li>Scrape, harvest, or collect data through automated means in a manner that places unreasonable load on the Service</li>
-            <li>Reverse engineer, copy, or replicate proprietary components of the platform without authorization</li>
+            <li>Violate any applicable local, state, or international law or regulation</li>
+            <li>Attempt unauthorized access to the application’s underlying infrastructure, networks, or APIs</li>
+            <li>Interfere with, disrupt, or deliberately degrade the operation of the Service</li>
+            <li>Bypass, disable, or circumvent any security or rate-limiting mechanisms</li>
+            <li>Introduce malicious code, spyware, viruses, or harmful software</li>
+            <li>Scrape, harvest, or indiscriminately collect data via automated bots or scripts in a manner that imposes an unreasonable burden on our infrastructure</li>
+            <li>Reverse engineer, replicate, or commercially exploit the proprietary components of the platform without explicit authorization</li>
           </ul>
           
           <h3>6. Intellectual Property</h3>
-          <p>Unless otherwise stated, all content, design elements, visual assets, branding, software code, graphics, animations, text, interfaces, and features made available through WeatherBox are protected by applicable intellectual property laws.</p>
-          <p>Ownership remains with WeatherBox or its licensors.</p>
-          <p>Nothing in these Terms grants users ownership rights in the Service.</p>
+          <p>Unless explicitly stated otherwise or covered under an open-source license, all original content, UI design elements, visual assets, software code, custom graphics, and animations provided within Weather Box are protected by applicable intellectual property and copyright laws.</p>
+          <p>The Weather Box name, branding, and original source code remain the intellectual property of the Weather Box project developers and maintainers.</p>
           
           <h3>7. Third-Party Services</h3>
-          <p>WeatherBox relies on third-party providers for weather, mapping, geolocation, analytics, hosting, and infrastructure services.</p>
-          <p>WeatherBox does not control third-party services and cannot guarantee their availability, accuracy, performance, or reliability.</p>
-          <p>Use of third-party services may also be subject to separate terms and privacy policies maintained by those providers.</p>
+          <p>Weather Box relies heavily on external third-party infrastructure and APIs for weather data, geolocation, mapping, and web hosting.</p>
+          <p>Because we do not directly control these third-party services, Weather Box cannot guarantee their continuous availability, absolute accuracy, or uninterrupted performance.</p>
+          <p>Your interaction with data sourced from these external entities is also subject to their respective Terms of Service and Privacy Policies.</p>
           
           <h3>8. Service Availability</h3>
-          <p>While we strive to maintain continuous availability, WeatherBox does not guarantee uninterrupted access to the Service.</p>
-          <p>Temporary interruptions may occur due to:</p>
+          <p>We strive to maintain continuous and highly responsive availability of the Service; however, Weather Box does not guarantee completely uninterrupted access.</p>
+          <p>Temporary outages or performance degradation may occur due to:</p>
           <ul>
-            <li>Maintenance</li>
-            <li>Software updates</li>
-            <li>Network failures</li>
-            <li>API invulnerability</li>
-            <li>Infrastructure issues</li>
-            <li>Third-party service outages</li>
-            <li>Events beyond our reasonable control</li>
+            <li>Routine platform maintenance or software deployments</li>
+            <li>Unforeseen network or cloud infrastructure failures</li>
+            <li>Third-party API deprecations or temporary unavailability</li>
+            <li>Force majeure events beyond our reasonable control</li>
           </ul>
           
           <h3>9. Disclaimer of Warranties</h3>
-          <p>The Service is provided on an "as is" and "as available" basis.</p>
-          <p>To the maximum extent permitted by law, WeatherBox disclaims all warranties, express or implied, including warranties of accuracy, reliability, availability, merchantability, fitness for a particular purpose, and non-infringement.</p>
+          <p>The Service is provided strictly on an <strong>"as is"</strong> and <strong>"as available"</strong> basis.</p>
+          <p>To the maximum extent permitted by applicable law, Weather Box and its developers expressly disclaim all warranties of any kind, whether express or implied. This includes, but is not limited to, implied warranties of accuracy, reliability, merchantability, fitness for a particular purpose, and non-infringement.</p>
           
           <h3>10. Limitation of Liability</h3>
-          <p>To the fullest extent permitted by applicable law, WeatherBox and its operators shall not be liable for any indirect, incidental, consequential, special, punitive, or exemplary damages arising from:</p>
+          <p>To the fullest extent permitted by applicable law, Weather Box, its operators, contributors, and affiliates shall not be liable for any indirect, incidental, consequential, special, punitive, or exemplary damages arising directly or indirectly from:</p>
           <ul>
-            <li>Use of the Service</li>
-            <li>Reliance upon weather information</li>
-            <li>Forecast inaccuracies</li>
-            <li>Data interruptions</li>
-            <li>Service outages</li>
-            <li>Technical errors</li>
-            <li>Loss of data</li>
-            <li>Loss of profits or business opportunities</li>
+            <li>Your access to or use of (or inability to access or use) the Service</li>
+            <li>Your reliance upon the meteorological data presented</li>
+            <li>Inaccuracies, errors, or delays in the weather forecasts</li>
+            <li>Service outages, data interruptions, or technical anomalies</li>
+            <li>Loss of data, profits, goodwill, or other intangible business opportunities</li>
           </ul>
-
-          <h3>11. Modifications to These Terms</h3>
-          <p>WeatherBox reserves the right to update these Terms at any time.</p>
-          <p>Updated versions will become effective upon publication.</p>
-          <p>Continued use of the Service after updates constitutes acceptance of the revised Terms.</p>
           
-          <h3>12. Contact</h3>
-          <p>Questions regarding these Terms may be submitted through the contact methods provided on the website.</p>
+          <h3>11. Modifications to These Terms</h3>
+          <p>Weather Box reserves the right to review, update, and amend these Terms at any time to reflect changes in our services or legal requirements.</p>
+          <p>Any updated versions will be posted immediately on this page and will become effective upon publication. Your continued use of the Service following such updates constitutes your binding acceptance of the revised Terms.</p>
+          
+          <h3>12. Contact Information</h3>
+          <p>If you have any questions, concerns, or requests regarding these Terms of Service, please reach out to us via our <a href="https://github.com/mnvdprasad/Weather-Box/issues" target="_blank" style="color: #60a5fa; text-decoration: none;">GitHub repository</a>.</p>
         </div>
 `;
 
@@ -476,7 +465,7 @@ document.addEventListener("DOMContentLoaded", function () {
   if (topLeftControls) {
     topLeftControls.insertAdjacentHTML("afterbegin", mainMenuHTML);
   }
-  
+
   const weatherBox = document.querySelector(".weather-box");
   if (weatherBox) {
     weatherBox.insertAdjacentHTML("beforeend", mainMenuBoxHTML);
@@ -564,5 +553,4 @@ document.addEventListener("DOMContentLoaded", function () {
       if (menuBtn) menuBtn.style.display = "";
     }
   });
-
 });
