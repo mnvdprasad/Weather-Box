@@ -1,10 +1,33 @@
-let currentStartupCity = null;
-let startupInterval;
-let weatherInterval;
+window.currentStartupCity = null;
+
+window.getWmoIcon = function (code, isDay) {
+  if ([0, 1].includes(code)) return isDay ? "clear-day" : "clear-night";
+  if (code === 2) return isDay ? "partly-sunny" : "partly-cloudy";
+  if (code === 3) return "overcast";
+  if ([45, 48].includes(code)) return "fog";
+  if ([51, 53, 55, 56, 57, 58, 59].includes(code)) return "drizzle";
+  if ([65, 67, 82].includes(code)) return "extreme-rain";
+  if ([61, 62, 63, 64, 66, 80, 81].includes(code)) return "rain";
+  if ([68, 69, 83, 84].includes(code)) return "rain-snow";
+  if ([75, 77, 86].includes(code)) return "extreme-snow";
+  if ([71, 72, 73, 74, 76, 85, 87, 88].includes(code)) return "snow";
+  if (code === 89) return "hail";
+  if (code === 95) return "thunderstorm";
+  if ([96, 99].includes(code)) return "severe-thunderstorm";
+  return "overcast";
+};
+
+window.isWmoSnow = function (code) {
+  return [71, 72, 73, 74, 75, 76, 77, 85, 86, 87, 88].includes(code);
+};
+
+window.isWmoMixed = function (code) {
+  return [68, 69, 83, 84].includes(code);
+};
+
 let debounceTimer;
 let currentFocus = -1;
 let currentTimeFormat = "12-hour";
-let currentRefreshInterval = 0;
 let lightningTimers = {};
 let currentUnits = {
   temp: "Celsius",
@@ -15,10 +38,27 @@ let currentUnits = {
 };
 let timeInterval;
 
+let homeRequestId = 0;
+let homeAbortController = null;
+
 window.homeLastLoadedCity = null;
 window.preloadedHomeHTML = null;
 
-async function fetchStartupCityWeather(isPreload = false) {
+window.cancelHomeRequest = function () {
+  if (homeAbortController) {
+    homeAbortController.abort();
+    homeAbortController = null;
+  }
+  homeRequestId++;
+};
+
+async function fetchStartupCityWeather(isPreload = false, useCache = false) {
+  const myRequestId = ++homeRequestId;
+  if (homeAbortController) {
+    homeAbortController.abort();
+  }
+  homeAbortController = new AbortController();
+  const signal = homeAbortController.signal;
   const majorCities = [
     "Hyderabad",
     "New Delhi",
@@ -40,27 +80,43 @@ async function fetchStartupCityWeather(isPreload = false) {
     "Mumbai",
     "San Francisco",
     "Seoul",
-    "Toronto",
+    "Buenos Aires",
     "Rio de Janeiro",
-    "Las Vegas",
+    "Mexico City",
     "Venice",
     "Cairo",
     "Moscow",
     "Cape Town",
     "Beijing",
     "Jakarta",
-    "Stockholm",
+    "Lagos",
   ];
   const randomCity =
-    currentStartupCity ||
+    window.currentStartupCity ||
     majorCities[Math.floor(Math.random() * majorCities.length)];
-  currentStartupCity = randomCity;
+  window.currentStartupCity = randomCity;
 
-  if (!isPreload && window.homeLastLoadedCity === currentStartupCity && window.preloadedHomeHTML) {
-    document.body.className = "";
+  if (
+    !isPreload &&
+    !useCache &&
+    window.homeLastLoadedCity === window.currentStartupCity &&
+    window.preloadedHomeHTML
+  ) {
+    document.body.classList.remove(
+      "clear-day",
+      "clear-night",
+      "partly-cloudy-day",
+      "partly-cloudy-night",
+      "cloudy",
+      "rainy",
+      "snowy",
+      "stormy",
+      "foggy",
+    );
     const weatherBox = document.querySelector(".weather-box");
     if (weatherBox) {
-      const isAnimDisabled = weatherBox.classList.contains("disable-animations");
+      const isAnimDisabled =
+        weatherBox.classList.contains("disable-animations");
       const isAbout = weatherBox.classList.contains("about-mode");
       weatherBox.className = `weather-box${isAnimDisabled ? " disable-animations" : ""}${isAbout ? " about-mode" : ""}`;
     }
@@ -77,11 +133,22 @@ async function fetchStartupCityWeather(isPreload = false) {
     return;
   }
 
-  if (!isPreload) {
-    document.body.className = "";
+  if (!isPreload && !useCache) {
+    document.body.classList.remove(
+      "clear-day",
+      "clear-night",
+      "partly-cloudy-day",
+      "partly-cloudy-night",
+      "cloudy",
+      "rainy",
+      "snowy",
+      "stormy",
+      "foggy",
+    );
     const weatherBox = document.querySelector(".weather-box");
     if (weatherBox) {
-      const isAnimDisabled = weatherBox.classList.contains("disable-animations");
+      const isAnimDisabled =
+        weatherBox.classList.contains("disable-animations");
       const isAbout = weatherBox.classList.contains("about-mode");
       weatherBox.className = `weather-box${isAnimDisabled ? " disable-animations" : ""}${isAbout ? " about-mode" : ""}`;
     }
@@ -93,12 +160,12 @@ async function fetchStartupCityWeather(isPreload = false) {
       homeContainer.className = "result";
       document.querySelector(".weather-box").appendChild(homeContainer);
     }
-    
+
     homeContainer.innerHTML = `
       <style>
         @keyframes shimmer-sweep {
-          0% { background-position: -200% 0; }
-          100% { background-position: 200% 0; }
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
         }
         .shimmer-bg {
           background: linear-gradient(90deg, rgba(255,255,255,0.15) 25%, rgba(255,255,255,0.35) 50%, rgba(255,255,255,0.15) 75%);
@@ -114,14 +181,7 @@ async function fetchStartupCityWeather(isPreload = false) {
           -webkit-background-clip: text;
           display: inline-block;
         }
-        .disable-animations .shimmer-bg, .disable-animations .shimmer-text {
-          animation: none !important;
-        }
-        .disable-animations .shimmer-text {
-          background: rgba(255,255,255,0.4) !important;
-          background-clip: text;
-          -webkit-background-clip: text;
-        }
+
       </style>
       <div class="weather-main-display" style="opacity: 0.9; pointer-events: none; margin-top: 20px;">
           <div class="weather-info" style="width: 100%;">
@@ -182,30 +242,44 @@ async function fetchStartupCityWeather(isPreload = false) {
           </div>
       </div>
     `;
-    
+
     const mainResult = document.getElementById("result");
     if (mainResult) mainResult.style.display = "none";
     homeContainer.style.display = "block";
   }
 
   try {
-    let response;
-    const lastCity = localStorage.getItem("lastCity");
-    const lastLat = localStorage.getItem("lastLat");
-    const lastLon = localStorage.getItem("lastLon");
-    if (currentStartupCity === lastCity && lastLat && lastLon) {
-      response = await fetch(
-        window.getWeatherEndpoint("weather", { lat: lastLat, lon: lastLon }),
-      );
+    let data, fData, aqData;
+    if (useCache && window.homeLastRawData) {
+      ({ data, fData, aqData } = window.homeLastRawData);
     } else {
-      response = await fetch(
-        window.getWeatherEndpoint("weather", {
-          q: encodeURIComponent(randomCity),
-        }),
-      );
+      let response;
+      const lastCity = localStorage.getItem("lastCity");
+      const lastLat = localStorage.getItem("lastLat");
+      const lastLon = localStorage.getItem("lastLon");
+      if (
+        window.currentStartupCity === lastCity &&
+        lastLat !== null &&
+        lastLon !== null
+      ) {
+        response = await fetch(
+          window.getWeatherEndpoint("weather", { lat: lastLat, lon: lastLon }),
+          { signal },
+        );
+      } else {
+        response = await fetch(
+          window.getWeatherEndpoint("weather", {
+            q: encodeURIComponent(randomCity),
+          }),
+          { signal },
+        );
+      }
+      if (!response.ok) {
+        throw new Error("Unable to load weather data");
+      }
+      data = await response.json();
     }
-    if (!response.ok) return;
-    const data = await response.json();
+    if (myRequestId !== homeRequestId) return;
     const temp = data.main.temp;
     const feels = data.main.feels_like;
     let displayTemp =
@@ -215,15 +289,15 @@ async function fetchStartupCityWeather(isPreload = false) {
     let tempUnit = currentUnits.temp === "Fahrenheit" ? "°F" : "°C";
     const condition = data.weather[0].description;
     const humidity = data.main.humidity;
-    const windSpeed = data.wind?.speed || 0;
+    const windSpeed = data.wind?.speed ?? 0;
     const windKmh = windSpeed * 3.6;
     let displayWind;
     if (currentUnits.wind === "mph") displayWind = windSpeed * 2.23694;
     else if (currentUnits.wind === "m/s") displayWind = windSpeed;
     else displayWind = windKmh;
     let windStr = Math.round(displayWind);
-    const windDeg = data.wind?.deg || 0;
-    const clouds = data.clouds?.all || 0;
+    const windDeg = data.wind?.deg ?? null;
+    const clouds = data.clouds?.all ?? 0;
     const directions = [
       "N",
       "NNE",
@@ -242,8 +316,9 @@ async function fetchStartupCityWeather(isPreload = false) {
       "NW",
       "NNW",
     ];
-    const windDir = directions[Math.round(windDeg / 22.5) % 16];
-    const visibilityVal =
+    const windDir =
+      windDeg !== null ? directions[Math.round(windDeg / 22.5) % 16] : "—";
+    let visibilityVal =
       (data.visibility !== undefined ? data.visibility : 10000) / 1000;
     let displayVis = visibilityVal;
     if (currentUnits.vis === "mi") displayVis = visibilityVal * 0.621371;
@@ -253,11 +328,25 @@ async function fetchStartupCityWeather(isPreload = false) {
     let forecastHtml = "";
     let precipProb = 0;
     try {
-      const forecastRes = await fetch(
-        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,weather_code,is_day,precipitation_probability,cloudcover,visibility&timezone=auto&forecast_days=2`,
-      );
-      if (forecastRes.ok) {
-        const fData = await forecastRes.json();
+      if (!useCache) {
+        const forecastRes = await fetch(
+          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=visibility&daily=sunrise,sunset&hourly=temperature_2m,weather_code,is_day,precipitation_probability,cloudcover,visibility,cape&timezone=auto&forecast_days=2`,
+          { signal },
+        );
+        if (forecastRes.ok) {
+          fData = await forecastRes.json();
+        }
+      }
+      if (myRequestId !== homeRequestId) return;
+
+      if (fData) {
+        if (fData && fData.current && fData.current.visibility !== undefined) {
+          visibilityVal = fData.current.visibility / 1000;
+          let omDispVis = visibilityVal;
+          if (currentUnits.vis === "mi") omDispVis = visibilityVal * 0.621371;
+          visStr = Number(omDispVis.toFixed(1)).toString();
+        }
+
         const now = new Date();
         const utc = now.getTime() + now.getTimezoneOffset() * 60000;
         const cityTime = new Date(utc + 1000 * data.timezone);
@@ -267,65 +356,64 @@ async function fetchStartupCityWeather(isPreload = false) {
         const locHour = String(cityTime.getHours()).padStart(2, "0");
         const locTimeStr = `${locYear}-${locMonth}-${locDay}T${locHour}:00`;
 
-        let startIndex = fData.hourly.time.indexOf(locTimeStr);
-        if (startIndex === -1) startIndex = cityTime.getHours();
-        precipProb = fData.hourly.precipitation_probability[startIndex] || 0;
-
+        precipProb = 0;
         let tabsHtml = "";
-        for (let i = startIndex; i < startIndex + 5; i++) {
-          if (i >= fData.hourly.time.length) break;
-          let timeStr = fData.hourly.time[i];
-          let hour = parseInt(timeStr.split("T")[1].substring(0, 2));
 
-          let displayTime;
-          if (i === startIndex) {
-            displayTime = "Now";
-          } else if (
-            typeof currentTimeFormat !== "undefined" &&
-            currentTimeFormat === "24-hour"
-          ) {
-            displayTime = `${hour.toString().padStart(2, "0")}:00`;
-          } else {
-            let ampm = hour >= 12 ? "PM" : "AM";
-            let displayHour = hour % 12;
-            displayHour = displayHour ? displayHour : 12;
-            displayTime = `${displayHour} ${ampm}`;
+        if (fData && fData.hourly) {
+          let startIndex = fData.hourly.time.indexOf(locTimeStr);
+          if (startIndex === -1) {
+            let minDiff = Infinity;
+            let targetTime = cityTime.getTime();
+            for (let i = 0; i < fData.hourly.time.length; i++) {
+              let diff = Math.abs(
+                new Date(fData.hourly.time[i]).getTime() - targetTime,
+              );
+              if (diff < minDiff) {
+                minDiff = diff;
+                startIndex = i;
+              }
+            }
           }
+          precipProb = fData.hourly.precipitation_probability[startIndex] ?? 0;
 
-          let fTempOrig = fData.hourly.temperature_2m[i];
-          let fTemp =
-            currentUnits.temp === "Fahrenheit"
-              ? Math.round((fTempOrig * 9) / 5 + 32)
-              : Math.round(fTempOrig);
-          let wCode = fData.hourly.weather_code[i];
-          let isDay = fData.hourly.is_day[i];
+          for (let i = startIndex; i < startIndex + 5; i++) {
+            if (i >= fData.hourly.time.length) break;
+            let timeStr = fData.hourly.time[i];
+            let hour = parseInt(timeStr.split("T")[1].substring(0, 2));
 
-          let hIcon = "clear-day";
-          if (wCode === 0 || wCode === 1)
-            hIcon = isDay ? "clear-day" : "clear-night";
-          else if (wCode === 2)
-            hIcon = isDay ? "partly-sunny" : "partly-cloudy";
-          else if (wCode === 3) hIcon = "overcast";
-          else if (wCode === 45 || wCode === 48) hIcon = "fog";
-          else if (wCode >= 51 && wCode <= 57) hIcon = "drizzle";
-          else if (wCode === 65 || wCode === 67 || wCode === 82)
-            hIcon = "extreme-rain";
-          else if (wCode >= 61 && wCode <= 67) hIcon = "rain";
-          else if (wCode >= 80 && wCode <= 82) hIcon = "rain";
-          else if (wCode === 75 || wCode === 77 || wCode === 86)
-            hIcon = "extreme-snow";
-          else if (wCode >= 71 && wCode <= 77) hIcon = "snow";
-          else if (wCode >= 85 && wCode <= 86) hIcon = "snow";
-          else if (wCode >= 96) hIcon = "severe-thunderstorm";
-          else if (wCode >= 95) hIcon = "thunderstorm";
+            let displayTime;
+            if (i === startIndex) {
+              displayTime = "Now";
+            } else if (
+              typeof currentTimeFormat !== "undefined" &&
+              currentTimeFormat === "24-hour"
+            ) {
+              displayTime = `${hour.toString().padStart(2, "0")}:00`;
+            } else {
+              let ampm = hour >= 12 ? "PM" : "AM";
+              let displayHour = hour % 12;
+              displayHour = displayHour ? displayHour : 12;
+              displayTime = `${displayHour} ${ampm}`;
+            }
 
-          tabsHtml += `
-                            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; min-width: 0;">
-                                <span style="font-size: 0.5rem; margin-bottom: -1px; font-family: 'LocalMerriweatherSans', 'Merriweather Sans', sans-serif; color: #F9FAFB">${displayTime}</span>
-                                <img src="${window.getCachedAsset(`assets/icons/${hIcon}.svg`)}" style="width: 36px; height: 36px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4)); margin-bottom: -1px;" alt="${hIcon}">
-                                <span style="font-size: 0.6rem; font-weight: 400; font-family: 'LocalMerriweatherSans', 'Merriweather Sans', sans-serif; color: #F9FAFB; margin-bottom: -3px;">${fTemp}°</span>
-                            </div>
-                        `;
+            let fTempOrig = fData.hourly.temperature_2m[i];
+            let fTemp =
+              currentUnits.temp === "Fahrenheit"
+                ? Math.round((fTempOrig * 9) / 5 + 32)
+                : Math.round(fTempOrig);
+            let wCode = fData.hourly.weather_code[i];
+            let isDay = fData.hourly.is_day[i];
+
+            let hIcon = window.getWmoIcon(wCode, isDay);
+
+            tabsHtml += `
+                              <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; min-width: 0;">
+                                  <span style="font-size: 0.5rem; margin-bottom: -1px; font-family: 'LocalMerriweatherSans', 'Merriweather Sans', sans-serif; color: #F9FAFB">${displayTime}</span>
+                                  <img src="${window.getCachedAsset(`assets/icons/${hIcon}.svg`)}" style="width: 36px; height: 36px; margin-bottom: -1px;" alt="${hIcon}">
+                                  <span style="font-size: 0.6rem; font-weight: 400; font-family: 'LocalMerriweatherSans', 'Merriweather Sans', sans-serif; color: #F9FAFB; margin-bottom: -3px;">${fTemp}°</span>
+                              </div>
+                          `;
+          }
         }
 
         let cond = condition.toLowerCase();
@@ -413,17 +501,42 @@ async function fetchStartupCityWeather(isPreload = false) {
         else if (visibilityVal < 8 || windKmh >= 25)
           drivingAdvice = "Stay Alert";
 
-        let aqi = 0;
-        let avgAqi = 0;
-        let pollenIndex = "0.0";
-        let pollenLabel = "Low";
-        let pollenColor = "#00e400";
-        let aqiColor = "#00e400";
+        let aqi = null;
+        let avgAqi = null;
+        let pollenIndex = "N/A";
+        let pollenLabel = "N/A";
+        let pollenColor = "rgba(255,255,255,0.4)";
+        let aqiColor = "rgba(255,255,255,0.4)";
 
         let currentUnix = Math.floor(Date.now() / 1000);
         let sunsetUnix = data.sys?.sunset || currentUnix;
         let sunriseUnix = data.sys?.sunrise || currentUnix + 86400;
-        if (sunriseUnix < sunsetUnix) sunriseUnix += 86400;
+
+        if (
+          fData &&
+          fData.daily &&
+          fData.daily.sunrise &&
+          fData.daily.sunrise.length > 1
+        ) {
+          let todaySunsetMs =
+            fData.daily.sunset && fData.daily.sunset[0]
+              ? new Date(fData.daily.sunset[0]).getTime()
+              : null;
+          let tomorrowSunriseMs = fData.daily.sunrise[1]
+            ? new Date(fData.daily.sunrise[1]).getTime()
+            : null;
+
+          if (todaySunsetMs && !isNaN(todaySunsetMs)) {
+            sunsetUnix = Math.floor(todaySunsetMs / 1000);
+          }
+          if (tomorrowSunriseMs && !isNaN(tomorrowSunriseMs)) {
+            sunriseUnix = Math.floor(tomorrowSunriseMs / 1000);
+          } else if (sunriseUnix < sunsetUnix) {
+            sunriseUnix += 86400;
+          }
+        } else {
+          if (sunriseUnix < sunsetUnix) sunriseUnix += 86400;
+        }
 
         let bestViewingStart = sunsetUnix + 90 * 60;
         let bestViewingEnd = sunriseUnix - 90 * 60;
@@ -442,30 +555,47 @@ async function fetchStartupCityWeather(isPreload = false) {
         let locTimeStartStr = getLocalTimeStr(bestViewingStart);
 
         try {
-          const aqResponse = await fetch(
-            `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi&hourly=grass_pollen,alder_pollen,birch_pollen,ragweed_pollen,us_aqi&timezone=auto`,
-          );
-          if (aqResponse.ok) {
-            const aqData = await aqResponse.json();
-            aqi = aqData.current?.us_aqi || 0;
+          if (!useCache) {
+            const aqResponse = await fetch(
+              `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi&hourly=grass_pollen,alder_pollen,birch_pollen,ragweed_pollen,us_aqi&timezone=auto`,
+              { signal },
+            );
+            if (aqResponse.ok) {
+              aqData = await aqResponse.json();
+            }
+          }
+          if (myRequestId !== homeRequestId) return;
+          if (aqData) {
+            aqi = aqData.current?.us_aqi ?? null;
 
             let startAqIndex = aqData.hourly?.time?.indexOf(locTimeStartStr);
+            if (
+              aqi === null &&
+              aqData.hourly?.us_aqi?.length > 0 &&
+              startAqIndex !== -1 &&
+              startAqIndex !== undefined
+            ) {
+              aqi = aqData.hourly.us_aqi[startAqIndex] ?? null;
+            }
+
             if (startAqIndex !== -1 && startAqIndex !== undefined) {
               let sumAqi = 0,
                 countAqi = 0;
               for (let i = 0; i < viewingHours; i++) {
                 let idx = startAqIndex + i;
-                if (idx < (aqData.hourly?.us_aqi?.length || 0)) {
-                  sumAqi += aqData.hourly.us_aqi[idx] || 0;
+                if (idx < (aqData.hourly?.us_aqi?.length ?? 0)) {
+                  sumAqi += aqData.hourly.us_aqi[idx] ?? 0;
                   countAqi++;
                 }
               }
               avgAqi = countAqi > 0 ? sumAqi / countAqi : aqi;
             } else {
-              avgAqi = aqi;
+              avgAqi = aqi !== null ? aqi : null;
             }
 
-            if (aqi > 50 && aqi <= 100) aqiColor = "#ffff00";
+            if (aqi === null) aqiColor = "rgba(255,255,255,0.4)";
+            else if (aqi <= 50) aqiColor = "#00e400";
+            else if (aqi > 50 && aqi <= 100) aqiColor = "#ffff00";
             else if (aqi > 100 && aqi <= 150) aqiColor = "#ff7e00";
             else if (aqi > 150 && aqi <= 200) aqiColor = "#ff007f";
             else if (aqi > 200 && aqi <= 300) aqiColor = "#8f3f97";
@@ -477,13 +607,28 @@ async function fetchStartupCityWeather(isPreload = false) {
             const locTimeStr = `${cityTime.getFullYear()}-${String(cityTime.getMonth() + 1).padStart(2, "0")}-${String(cityTime.getDate()).padStart(2, "0")}T${String(cityTime.getHours()).padStart(2, "0")}:00`;
 
             let aqHourIndex = aqData.hourly?.time?.indexOf(locTimeStr);
-            if (aqHourIndex === -1 || aqHourIndex === undefined)
-              aqHourIndex = cityTime.getHours();
+            if (aqHourIndex === -1 || aqHourIndex === undefined) {
+              if (aqData.hourly && aqData.hourly.time) {
+                let minDiff = Infinity;
+                let targetTime = cityTime.getTime();
+                for (let i = 0; i < aqData.hourly.time.length; i++) {
+                  let diff = Math.abs(
+                    new Date(aqData.hourly.time[i]).getTime() - targetTime,
+                  );
+                  if (diff < minDiff) {
+                    minDiff = diff;
+                    aqHourIndex = i;
+                  }
+                }
+              } else {
+                aqHourIndex = -1;
+              }
+            }
 
-            let grass = aqData.hourly?.grass_pollen?.[aqHourIndex] || 0;
-            let alder = aqData.hourly?.alder_pollen?.[aqHourIndex] || 0;
-            let birch = aqData.hourly?.birch_pollen?.[aqHourIndex] || 0;
-            let weed = aqData.hourly?.ragweed_pollen?.[aqHourIndex] || 0;
+            let grass = aqData.hourly?.grass_pollen?.[aqHourIndex] ?? 0;
+            let alder = aqData.hourly?.alder_pollen?.[aqHourIndex] ?? 0;
+            let birch = aqData.hourly?.birch_pollen?.[aqHourIndex] ?? 0;
+            let weed = aqData.hourly?.ragweed_pollen?.[aqHourIndex] ?? 0;
 
             const getSubIndex = (val, thresholds) => {
               if (val === 0) return 0;
@@ -550,9 +695,9 @@ async function fetchStartupCityWeather(isPreload = false) {
           console.warn("Startup AQI/Pollen fetch failed", err);
         }
 
-        let startForecastIndex = fData.hourly?.time?.indexOf(locTimeStartStr);
+        let startForecastIndex = fData?.hourly?.time?.indexOf(locTimeStartStr);
         let avgClouds = clouds;
-        let avgVis_km = visibilityVal / 1000;
+        let avgVis_km = visibilityVal;
 
         if (startForecastIndex !== -1 && startForecastIndex !== undefined) {
           let sumC = 0,
@@ -560,9 +705,9 @@ async function fetchStartupCityWeather(isPreload = false) {
             countF = 0;
           for (let i = 0; i < viewingHours; i++) {
             let idx = startForecastIndex + i;
-            if (idx < (fData.hourly?.time?.length || 0)) {
-              sumC += fData.hourly.cloudcover?.[idx] || 0;
-              sumV += (fData.hourly.visibility?.[idx] || 10000) / 1000;
+            if (idx < (fData?.hourly?.time?.length ?? 0)) {
+              sumC += fData?.hourly?.cloudcover?.[idx] ?? 0;
+              sumV += (fData?.hourly?.visibility?.[idx] ?? 10000) / 1000;
               countF++;
             }
           }
@@ -629,8 +774,8 @@ async function fetchStartupCityWeather(isPreload = false) {
         const sunriseTime = formatLocalTimeStartup(data.sys?.sunrise);
         const sunsetTime = formatLocalTimeStartup(data.sys?.sunset);
 
-        let aqiDash = Math.min((aqi / 500) * 90.47, 90.47);
-        let aqiDashFade1 = aqiDash + (90.47 - aqiDash) / 2;
+        let aqiDash = aqi !== null ? Math.min((aqi / 500) * 90.47, 90.47) : 0;
+        let aqiDashFade1 = aqi !== null ? aqiDash + (90.47 - aqiDash) / 2 : 0;
 
         forecastHtml = `
                         <div class="startup-details-grid" style="gap: 4px; flex-direction: column;">
@@ -647,16 +792,16 @@ async function fetchStartupCityWeather(isPreload = false) {
                                             <circle cx="22" cy="22" r="18" fill="none" stroke="${aqiColor}" stroke-opacity="0.4" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="${aqiDashFade1} 113.1" transform="rotate(126 22 22)" />
                                             <circle cx="22" cy="22" r="18" fill="none" stroke="${aqiColor}" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="${aqiDash} 113.1" transform="rotate(126 22 22)" />
                                         </svg>
-                                        <div style="position: absolute; top: 12px; left: 0; width: 100%; text-align: center; font-size: 0.95rem; font-weight: bold; color: ${aqiColor};">${aqi}</div>
+                                        <div style="position: absolute; top: 12px; left: 0; width: 100%; text-align: center; font-size: 0.95rem; font-weight: bold; color: ${aqiColor};">${aqi !== null ? aqi : "-"}</div>
                                         <div style="position: absolute; bottom: -6px; left: 0; width: 100%; text-align: center; font-size: 0.6rem; font-weight: bold; color: #F9FAFB;">AQI</div>
                                     </div>
                                 </div>
-                                <div style="display: flex; flex-direction: row; align-items: center; justify-content: center; flex: 1.2; padding: 5px; margin-left: -20px;">
+                                <div style="display: flex; flex-direction: row; align-items: center; justify-content: center; flex: 1.2; padding: 5px; margin-left: -10px;">
                                     <img src="${window.getCachedAsset(`assets/icons/pollen_interface.svg`)}" style="width: 24px; height: 24px; transform: scaleY(1.8); margin-right: 4px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4));" alt="Pollen">
                                     <div style="display: flex; flex-direction: column; justify-content: center;">
                                         <span style="font-size: 0.65rem; font-weight: bold; margin-top: -1px; margin-bottom: 3px; font-family: 'LocalMerriweatherSans', 'Merriweather Sans', sans-serif;">Pollen</span>
-                                        <span style="font-size: 0.6rem; font-weight: bold; font-family: 'LocalMerriweatherSans', 'Merriweather Sans', sans-serif; max-width: 20px; margin-bottom: 3px; color: ${pollenColor};">${pollenLabel}</span>
-                                        <span style="font-size: 0.55rem; opacity: 0.8; font-weight: bold; margin-top: 1px;">${pollenIndex} / 12</span>
+                                        <span style="font-size: 0.6rem; font-weight: bold; font-family: 'LocalMerriweatherSans', 'Merriweather Sans', sans-serif; max-width: 20px; margin-bottom: 3px; color: ${pollenColor}; white-space: nowrap; overflow: hidden; max-width: 50px;">${pollenLabel}</span>
+                                        <span style="font-size: 0.55rem; opacity: 0.8; font-weight: bold; margin-top: 1px;">${pollenIndex !== "N/A" ? `${pollenIndex} / 12` : "N/A"}</span>
                                     </div>
                                 </div>
                                 </div>
@@ -793,7 +938,7 @@ async function fetchStartupCityWeather(isPreload = false) {
                                     </div>
                                     <i class='bx bx-chevron-right' style="font-size: 0.8rem; opacity: 0.7; flex-shrink: 0;"></i>
                                 </div>
-                                <div class="startup-glass-tab" style="flex: 1; padding: 6px 4px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; box-sizing: border-box;" onclick="if(navigator.share) { navigator.share({ title: 'Weather Box', url: 'https://weather-box-ten.vercel.app' }); } else { window.open('https://weather-box-ten.vercel.app', '_blank'); }">
+                                <div class="startup-glass-tab" style="flex: 1; padding: 6px 4px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; box-sizing: border-box;" onclick="if(navigator.share) { navigator.share({ title: 'Weather Box', url: 'https://weatherboxlive.vercel.app' }).catch(() => {}); } else { window.open('https://weatherboxlive.vercel.app', '_blank'); }">
                                     <div style="display: flex; align-items: center; gap: 4px; min-width: 0;">
                                         <img src="${window.getCachedAsset(`assets/icons/share.svg`)}" style="width: 1.2rem; height: 1.2rem;" alt="Share">
                                         <div style="display: flex; flex-direction: column; min-width: 0;">
@@ -828,56 +973,35 @@ async function fetchStartupCityWeather(isPreload = false) {
     let resolvedCountry = data.sys?.country || "";
 
     try {
-      const nomRes = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&addressdetails=1`,
+      const owmGeoRes = await fetch(
+        window.getWeatherEndpoint("geo_reverse", { lat: lat, lon: lon }),
       );
-      if (nomRes.ok) {
-        const nomData = await nomRes.json();
-        if (nomData) {
-          let cName = nomData.name;
-          if (!cName || /\d/.test(cName)) {
-            cName = nomData.address
-              ? nomData.address.village ||
-                nomData.address.town ||
-                nomData.address.city ||
-                nomData.address.hamlet ||
-                nomData.address.suburb
-              : "";
-          }
-          if (!cName && nomData.display_name) {
-            const parts = nomData.display_name.split(",");
-            const textParts = parts
-              .map((p) => p.trim())
-              .filter((p) => !/\d/.test(p));
-            cName = textParts.length > 0 ? textParts[0] : "";
-          }
+      if (owmGeoRes.ok) {
+        const owmGeoData = await owmGeoRes.json();
+        if (owmGeoData && owmGeoData.length > 0) {
+          const loc = owmGeoData[0];
+          let cName = loc.name;
           if (cName) {
             displayCityName = cName;
-          }
+            let parts = [cName];
+            if (loc.state && !parts.includes(loc.state)) parts.push(loc.state);
 
-          if (nomData.address) {
-            resolvedCountry = nomData.address.country_code
-              ? nomData.address.country_code.toUpperCase()
-              : resolvedCountry;
-
-            let parts = [displayCityName];
-            let addr = nomData.address;
-            let mandal = addr.county || addr.municipality || addr.suburb || "";
-            let district = addr.state_district || addr.district || "";
-            let state = addr.state || addr.region || "";
-            let postcode = addr.postcode || "";
-            let country = addr.country || "";
-
-            if (mandal && !parts.includes(mandal)) parts.push(mandal);
-            if (district && !parts.includes(district)) parts.push(district);
-            if (state && !parts.includes(state)) {
-              parts.push(postcode ? `${state} ${postcode}` : state);
-            } else if (postcode && !parts.includes(postcode)) {
-              parts.push(postcode);
+            let countryFull = loc.country || "";
+            if (countryFull && countryFull.length === 2) {
+              try {
+                const regionNames = new Intl.DisplayNames(["en"], {
+                  type: "region",
+                });
+                countryFull = regionNames.of(countryFull) || countryFull;
+              } catch (e) {
+                // ignore
+              }
             }
-            if (country && !parts.includes(country)) parts.push(country);
+            if (countryFull && !parts.includes(countryFull))
+              parts.push(countryFull);
 
             resolvedFullAddress = parts.filter(Boolean).join(",<br>");
+            resolvedCountry = loc.country || resolvedCountry;
           }
         }
       }
@@ -886,12 +1010,12 @@ async function fetchStartupCityWeather(isPreload = false) {
     }
 
     if (
-      currentStartupCity === localStorage.getItem("lastCity") &&
+      window.currentStartupCity === localStorage.getItem("lastCity") &&
       localStorage.getItem("lastCityName")
     ) {
       displayCityName = localStorage.getItem("lastCityName");
-    } else if (majorCities.includes(currentStartupCity)) {
-      displayCityName = currentStartupCity;
+    } else if (majorCities.includes(window.currentStartupCity)) {
+      displayCityName = window.currentStartupCity;
     }
 
     let fullCountry = resolvedCountry;
@@ -959,8 +1083,9 @@ async function fetchStartupCityWeather(isPreload = false) {
             `;
 
     if (isPreload) {
+      if (!useCache) window.homeLastRawData = { data, fData, aqData };
       window.preloadedHomeHTML = htmlString;
-      window.homeLastLoadedCity = currentStartupCity;
+      window.homeLastLoadedCity = window.currentStartupCity;
     } else {
       let homeContainer = document.getElementById("home-result");
       if (!homeContainer) {
@@ -969,23 +1094,29 @@ async function fetchStartupCityWeather(isPreload = false) {
         homeContainer.className = "result";
         document.querySelector(".weather-box").appendChild(homeContainer);
       }
+
+      if (useCache) {
+        homeContainer.classList.add("cached-render");
+      } else {
+        homeContainer.classList.remove("cached-render");
+      }
+
       homeContainer.innerHTML = htmlString;
       document.getElementById("result").style.display = "none";
       homeContainer.style.display = "block";
-      
+
+      if (!useCache) window.homeLastRawData = { data, fData, aqData };
       window.preloadedHomeHTML = htmlString;
-      window.homeLastLoadedCity = currentStartupCity;
+      window.homeLastLoadedCity = window.currentStartupCity;
     }
   } catch (error) {
     console.warn("Startup city fetch failed", error);
   }
 }
 
-//Initiates the display of a random startup city.
 function showRandomStartupCity() {
-  currentStartupCity = null;
+  window.currentStartupCity = null;
   fetchStartupCityWeather();
-  if (startupInterval) clearInterval(startupInterval);
 }
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -1024,7 +1155,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const lastCity = localStorage.getItem("lastCity");
         if (lastCity) {
           if (cityInput) cityInput.value = lastCity;
-          currentStartupCity = lastCity;
+          window.currentStartupCity = lastCity;
           fetchStartupCityWeather();
         } else {
           showRandomStartupCity();
