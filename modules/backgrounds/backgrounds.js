@@ -1,4 +1,5 @@
 function triggerLightning(selector) {
+  if (document.hidden) return;
   const el = document.querySelector(selector);
   if (!el) return;
   const weatherBox = document.querySelector(".weather-box");
@@ -27,6 +28,7 @@ function triggerLightning(selector) {
 }
 
 function triggerThunderFlash(selector) {
+  if (document.hidden) return;
   const el = document.querySelector(selector);
   if (!el) return;
   const weatherBox = document.querySelector(".weather-box");
@@ -53,9 +55,8 @@ function handleTestAnimations(city) {
   const result = document.getElementById("result");
   const messageBox = document.getElementById("message-box");
 
-  // Start of temporary code for testing animations
+  /* Start of temporary code for testing animations */
   const testAnimations = {
-    // Clear Sky
     clear: { class: "clear-day", icon: "clear-day", condition: "Clear" },
     "clear night": {
       class: "clear-night",
@@ -98,8 +99,6 @@ function handleTestAnimations(city) {
       icon: "clear-day",
       condition: "Mostly Sunny",
     },
-
-    // Partly Cloudy
     "scattered clouds": {
       class: "partly-cloudy-day",
       icon: "partly-sunny",
@@ -125,8 +124,6 @@ function handleTestAnimations(city) {
       icon: "partly-sunny",
       condition: "Partly Sunny",
     },
-
-    // Cloudy
     "broken clouds": {
       class: "cloudy-day",
       icon: "mostly-cloudy",
@@ -157,8 +154,6 @@ function handleTestAnimations(city) {
       icon: "mostly-cloudy_night",
       condition: "Cloudy",
     },
-
-    // Overcast
     overcast: {
       class: "overcast-day",
       icon: "overcast",
@@ -179,8 +174,6 @@ function handleTestAnimations(city) {
       icon: "overcast",
       condition: "Overcast Clouds",
     },
-
-    // Drizzle
     "light intensity drizzle": {
       class: "drizzle-day",
       icon: "drizzle",
@@ -221,18 +214,6 @@ function handleTestAnimations(city) {
       icon: "drizzle",
       condition: "Freezing Drizzle",
     },
-    "freezing drizzle": {
-      class: "drizzle-day",
-      icon: "drizzle",
-      condition: "Freezing Drizzle",
-    },
-    "freezing drizzle night": {
-      class: "drizzle-night",
-      icon: "drizzle",
-      condition: "Freezing Drizzle",
-    },
-
-    // Rain
     "light rain": {
       class: "rain-day",
       icon: "rain",
@@ -329,8 +310,6 @@ function handleTestAnimations(city) {
       icon: "rain",
       condition: "Continuous Rain",
     },
-
-    // Moderate Rain
     "moderate rain": {
       class: "moderate-rain-day",
       icon: "rain",
@@ -341,8 +320,6 @@ function handleTestAnimations(city) {
       icon: "rain",
       condition: "Moderate Rain",
     },
-
-    // Heavy & Extreme Rain
     "heavy rain": {
       class: "heavy-rain-day",
       icon: "extreme-rain",
@@ -403,8 +380,6 @@ function handleTestAnimations(city) {
       icon: "extreme-rain",
       condition: "Torrential Rain",
     },
-
-    // Rain and Snow
     sleet: { class: "rain-snow-day", icon: "sleet", condition: "Sleet" },
     "sleet night": {
       class: "rain-snow-night",
@@ -451,8 +426,6 @@ function handleTestAnimations(city) {
       icon: "sleet",
       condition: "Wintry Mix",
     },
-
-    // Light Snow
     "light snow": {
       class: "light-snow-day",
       icon: "snow",
@@ -483,8 +456,6 @@ function handleTestAnimations(city) {
       icon: "snow",
       condition: "Light Snow Showers",
     },
-
-    // Snow
     snow: { class: "snow-day", icon: "snow", condition: "Snow" },
     "snow night": {
       class: "snow-night",
@@ -511,8 +482,6 @@ function handleTestAnimations(city) {
       icon: "snow",
       condition: "Snow Showers",
     },
-
-    // Heavy Snow
     "heavy snow": {
       class: "heavy-snow-day",
       icon: "extreme-snow",
@@ -553,16 +522,12 @@ function handleTestAnimations(city) {
       icon: "extreme-snow",
       condition: "Blizzard",
     },
-
-    // Hail
     hail: { class: "hail-day", icon: "hail", condition: "Hail" },
     "hail night": {
       class: "hail-night",
       icon: "hail",
       condition: "Hail",
     },
-
-    // Mist / Fog / Haze
     mist: { class: "fog-day", icon: "mist", condition: "Mist" },
     "mist night": { class: "fog-night", icon: "mist", condition: "Mist" },
 
@@ -598,59 +563,76 @@ function handleTestAnimations(city) {
       icon: "fog",
       condition: "Freezing Fog",
     },
-
-    haze: { class: "fog-day", icon: "haze", condition: "Haze" },
-    "haze night": { class: "fog-night", icon: "haze", condition: "Haze" },
-    smoke: { class: "fog-day", icon: "haze", condition: "Smoke" },
+    haze: { class: "haze-day", icon: "haze", condition: "Haze" },
+    "haze night": { class: "haze-night", icon: "haze", condition: "Haze" },
+    smoke: { class: "smoke-day", icon: "haze", condition: "Smoke" },
     "smoke night": {
-      class: "fog-night",
+      class: "smoke-night",
       icon: "haze",
       condition: "Smoke",
     },
-    smog: { class: "fog-day", icon: "haze", condition: "Smog" },
-    "smog night": { class: "fog-night", icon: "haze", condition: "Smog" },
-    dust: { class: "fog-day", icon: "haze", condition: "Dust" },
-    "dust night": { class: "fog-night", icon: "haze", condition: "Dust" },
-    sand: { class: "fog-day", icon: "haze", condition: "Sand" },
-    "sand night": { class: "fog-night", icon: "haze", condition: "Sand" },
+    smog: { class: "smoke-day", icon: "haze", condition: "Smog" },
+    "smog night": { class: "smoke-night", icon: "haze", condition: "Smog" },
+    dust: { class: "dust-day", icon: "haze", condition: "Dust" },
+    "dust night": { class: "dust-night", icon: "haze", condition: "Dust" },
+    sand: { class: "dust-day", icon: "haze", condition: "Sand" },
+    "sand night": { class: "dust-night", icon: "haze", condition: "Sand" },
     "dust whirls": {
-      class: "fog-day",
+      class: "dust-day",
       icon: "haze",
       condition: "Dust Whirls",
     },
     "dust whirls night": {
-      class: "fog-night",
+      class: "dust-night",
       icon: "haze",
       condition: "Dust Whirls",
     },
     "dust storm": {
-      class: "fog-day",
+      class: "dust-day",
       icon: "haze",
       condition: "Dust Storm",
     },
     "dust storm night": {
-      class: "fog-night",
+      class: "dust-night",
       icon: "haze",
       condition: "Dust Storm",
     },
-    sandstorm: { class: "fog-day", icon: "haze", condition: "Sandstorm" },
+    sandstorm: { class: "dust-day", icon: "haze", condition: "Sandstorm" },
     "sandstorm night": {
-      class: "fog-night",
+      class: "dust-night",
       icon: "haze",
       condition: "Sandstorm",
     },
     "volcanic ash": {
-      class: "fog-day",
+      class: "dust-day",
       icon: "haze",
       condition: "Volcanic Ash",
     },
     "volcanic ash night": {
-      class: "fog-night",
+      class: "dust-night",
       icon: "haze",
       condition: "Volcanic Ash",
     },
-
-    // Thunderstorm
+    squall: {
+      class: "squall-day",
+      icon: "fog",
+      condition: "Squall",
+    },
+    "squall night": {
+      class: "squall-night",
+      icon: "fog",
+      condition: "Squall",
+    },
+    tornado: {
+      class: "tornado-day",
+      icon: "fog",
+      condition: "Tornado",
+    },
+    "tornado night": {
+      class: "tornado-night",
+      icon: "fog",
+      condition: "Tornado",
+    },
     thunderstorm: {
       class: "thunderstorm-day",
       icon: "thunderstorm",
@@ -731,8 +713,6 @@ function handleTestAnimations(city) {
       icon: "thunderstorm",
       condition: "Electrical Storm",
     },
-
-    // Thunderstorm with Rain
     "thunderstorm with rain": {
       class: "thunderstorm-rain-day",
       icon: "thunderstorm-rain",
@@ -773,8 +753,6 @@ function handleTestAnimations(city) {
       icon: "thunderstorm-rain",
       condition: "Rainstorm",
     },
-
-    // Severe Thunderstorm
     "heavy thunderstorm": {
       class: "severe-thunderstorm-day",
       icon: "severe-thunderstorm",
@@ -800,8 +778,6 @@ function handleTestAnimations(city) {
   if (testAnimations[city]) {
     const testData = testAnimations[city];
     const weatherBox = document.querySelector(".weather-box");
-
-    if (weatherInterval) clearTimeout(weatherInterval);
     document.getElementById("current-time").innerText = "";
     if (timeInterval) clearInterval(timeInterval);
     messageBox.style.display = "none";
@@ -809,7 +785,17 @@ function handleTestAnimations(city) {
     const isAnimDisabled = weatherBox.classList.contains("disable-animations");
     const isAbout = weatherBox.classList.contains("about-mode");
     weatherBox.className = `weather-box${isAnimDisabled ? " disable-animations" : ""}${isAbout ? " about-mode" : ""}`;
-    document.body.className = "";
+    document.body.classList.remove(
+      "clear-day",
+      "clear-night",
+      "partly-cloudy-day",
+      "partly-cloudy-night",
+      "cloudy",
+      "rainy",
+      "snowy",
+      "stormy",
+      "foggy",
+    );
 
     testData.class.split(" ").forEach((cls) => {
       weatherBox.classList.add(cls);
@@ -897,29 +883,56 @@ function handleTestAnimations(city) {
     setTimeout(adjustZoom, 100);
     return true;
   }
-  // End of temporary code for testing animations
+  /* End of temporary code for testing animations */
 
   return false;
 }
 
-// Strictly disable animations and timers when running in the background
-document.addEventListener("visibilitychange", () => {
-  if (document.hidden) {
+/* Strictly disable animations and timers when running in the background */
+if (window.appVisibility) {
+  window.appVisibility.onPause.push(() => {
     document.body.classList.add("animations-paused");
     Object.values(lightningTimers).forEach(clearTimeout);
-    document.querySelectorAll(".lightning").forEach(el => el.classList.remove("striking"));
-    document.querySelectorAll(".thunder-flash").forEach(el => el.classList.remove("flashing"));
-  } else {
+    document
+      .querySelectorAll(".lightning")
+      .forEach((el) => el.classList.remove("striking"));
+    document
+      .querySelectorAll(".thunder-flash")
+      .forEach((el) => el.classList.remove("flashing"));
+  });
+
+  window.appVisibility.onResume.push(() => {
     document.body.classList.remove("animations-paused");
     const weatherBox = document.querySelector(".weather-box");
     if (weatherBox && weatherBox.className.includes("thunderstorm")) {
-      lightningTimers[".lightning-1"] = setTimeout(() => triggerLightning(".lightning-1"), Math.random() * 3000);
-      lightningTimers[".lightning-2"] = setTimeout(() => triggerLightning(".lightning-2"), Math.random() * 4000 + 2000);
-      lightningTimers[".lightning-3"] = setTimeout(() => triggerLightning(".lightning-3"), Math.random() * 5000 + 1000);
-      lightningTimers[".lightning-4"] = setTimeout(() => triggerLightning(".lightning-4"), Math.random() * 6000 + 2000);
-      lightningTimers[".thunder-flash-1"] = setTimeout(() => triggerThunderFlash(".thunder-flash-1"), Math.random() * 2000 + 1000);
-      lightningTimers[".thunder-flash-2"] = setTimeout(() => triggerThunderFlash(".thunder-flash-2"), Math.random() * 3000 + 2000);
-      lightningTimers[".thunder-flash-3"] = setTimeout(() => triggerThunderFlash(".thunder-flash-3"), Math.random() * 2500 + 1500);
+      lightningTimers[".lightning-1"] = setTimeout(
+        () => triggerLightning(".lightning-1"),
+        Math.random() * 3000,
+      );
+      lightningTimers[".lightning-2"] = setTimeout(
+        () => triggerLightning(".lightning-2"),
+        Math.random() * 4000 + 2000,
+      );
+      lightningTimers[".lightning-3"] = setTimeout(
+        () => triggerLightning(".lightning-3"),
+        Math.random() * 5000 + 1000,
+      );
+      lightningTimers[".lightning-4"] = setTimeout(
+        () => triggerLightning(".lightning-4"),
+        Math.random() * 6000 + 2000,
+      );
+      lightningTimers[".thunder-flash-1"] = setTimeout(
+        () => triggerThunderFlash(".thunder-flash-1"),
+        Math.random() * 2000 + 1000,
+      );
+      lightningTimers[".thunder-flash-2"] = setTimeout(
+        () => triggerThunderFlash(".thunder-flash-2"),
+        Math.random() * 3000 + 2000,
+      );
+      lightningTimers[".thunder-flash-3"] = setTimeout(
+        () => triggerThunderFlash(".thunder-flash-3"),
+        Math.random() * 2500 + 1500,
+      );
     }
-  }
-});
+  });
+}
